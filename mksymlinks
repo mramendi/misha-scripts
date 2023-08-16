@@ -1,0 +1,5 @@
+ln -s ../images images
+ln -s ../modules modules
+ln -s ../snippets snippets
+ln -s ../_attributes _attributes
+
