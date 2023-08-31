@@ -115,3 +115,4 @@ for dir in directories_to_process:
             # rewrite the file with the new content
             of=open(fname,"w")
             of.write(content_processed)
+            of.close()
