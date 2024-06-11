@@ -1,6 +1,8 @@
+task-yaml-to-doc/*.yaml
+task-yaml-to-doc/*.adoc
+
 test
 test/*
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
