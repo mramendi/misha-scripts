@@ -1,0 +1,11 @@
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+# ...
+  git_provider:
+    secret:
+      name: "github-webhook-config"
+# ...

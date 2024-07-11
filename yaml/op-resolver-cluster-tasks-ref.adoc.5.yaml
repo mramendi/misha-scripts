@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+spec:
+# ...
+  tasks:
+# ...
+  - name: build-from-source
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: maven
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+# ...

@@ -1,0 +1,15 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline: 
+    bundles-resolver-config:
+      default-service-account: pipelines
+    cluster-resolver-config:
+      default-namespace: test
+    git-resolver-config:
+      server-url: localhost.com
+    hub-resolver-config: 
+      default-tekton-hub-catalog: tekton
+#...

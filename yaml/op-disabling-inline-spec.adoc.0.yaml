@@ -1,0 +1,8 @@
+apiVersion: operator.tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipelineInline
+spec:
+  tasks:
+    taskSpec:
+# ...

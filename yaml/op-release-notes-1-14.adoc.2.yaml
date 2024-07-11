@@ -1,0 +1,10 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-param-enum
+spec:
+  params:
+  - name: message
+    enum: ["v1", "v2"]
+    default: "v1"
+# ...

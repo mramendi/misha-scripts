@@ -1,0 +1,10 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: remote-task-reference
+spec:
+  taskRef:
+    resolver: http
+    params:
+    - name: url
+      value: https://raw.githubusercontent.com/tektoncd-catalog/git-clone/main/task/git-clone/git-clone.yaml

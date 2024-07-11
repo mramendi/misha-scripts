@@ -1,0 +1,63 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: maven-build
+spec:
+  params:
+  - name: GIT_URL
+  workspaces:
+  - name: local-maven-repo
+  - name: source
+  tasks:
+  - name: git-clone
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: source
+    params:
+    - name: URL
+      value: $(params.GIT_URL)
+  - name: build
+    taskRef:
+      name: mvn
+    runAfter: ["git-clone"]
+    params:
+    - name: GOALS
+      value: ["package"]
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    - name: source
+      workspace: source
+  - name: int-test
+    taskRef:
+      name: mvn
+    runAfter: ["build"]
+    params:
+    - name: GOALS
+      value: ["verify"]
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    - name: source
+      workspace: source
+  - name: gen-report
+    taskRef:
+      name: mvn
+    runAfter: ["build"]
+    params:
+    - name: GOALS
+      value: ["site"]
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    - name: source
+      workspace: source

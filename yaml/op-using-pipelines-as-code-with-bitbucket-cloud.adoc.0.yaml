@@ -1,0 +1,13 @@
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+  url: "https://bitbucket.com/workspace/repo"
+  branch: "main"
+  git_provider:
+    user: "<BITBUCKET_USERNAME>" #<1>
+    secret:
+      name: "bitbucket-cloud-token" #<2>
+      key: "provider.token" # Set this if you have a different key in your secret

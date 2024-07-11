@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: cluster-task-reference-demo
+spec:
+  taskRef:
+    resolver: cluster
+    params:
+    - name: name
+      value: some-task
+    - name: namespace
+      value: test-namespace
+    - name: kind
+      value: task
+  params:
+  - name: sample-task-parameter
+    value: test

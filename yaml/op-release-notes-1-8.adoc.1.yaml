@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-hub-db
+  labels:
+    app: tekton-hub-db
+type: Opaque
+stringData:
+  POSTGRES_HOST: <hostname>
+  POSTGRES_DB: <database_name>
+  POSTGRES_USER: <username>
+  POSTGRES_PASSWORD: <password>
+  POSTGRES_PORT: <listening_port_number>

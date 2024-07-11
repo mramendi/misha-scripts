@@ -1,0 +1,10 @@
+spec:
+  steps:
+  - name: <step_name>
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 600m
+      limits:
+        memory: 4Gi
+        cpu: 900m

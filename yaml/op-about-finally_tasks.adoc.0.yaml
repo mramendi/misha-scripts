@@ -1,0 +1,40 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: clone-cleanup-workspace #<1>
+spec:
+  workspaces:
+    - name: git-source #<2>
+  tasks:
+    - name: clone-app-repo #<3>
+      taskRef:
+        name: git-clone-from-catalog
+      params:
+        - name: url
+          value: https://github.com/tektoncd/community.git
+        - name: subdirectory
+          value: application
+      workspaces:
+        - name: output
+          workspace: git-source
+  finally:
+    - name: cleanup #<4>
+      taskRef: #<5>
+        name: cleanup-workspace
+      workspaces: #<6>
+        - name: source
+          workspace: git-source
+    - name: check-git-commit
+      params: #<7>
+        - name: commit
+          value: $(tasks.clone-app-repo.results.commit)
+      taskSpec: #<8>
+        params:
+          - name: commit
+        steps:
+          - name: check-commit-initialized
+            image: alpine
+            script: |
+              if [[ ! $(params.commit) ]]; then
+                exit 1
+              fi

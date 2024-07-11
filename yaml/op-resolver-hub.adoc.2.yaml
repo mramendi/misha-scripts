@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-with-cluster-task-reference-demo
+spec:
+  tasks:
+  - name: "cluster-task-reference-demo"
+    taskRef:
+      resolver: hub
+      params:
+      - name: catalog
+        value: tekton-catalog-tasks
+      - name: type
+        value: artifact
+      - name: kind
+        value: task
+      - name: name
+        value: example-task
+      - name: version
+        value: "0.6"
+    params:
+    - name: sample-task-parameter
+      value: test

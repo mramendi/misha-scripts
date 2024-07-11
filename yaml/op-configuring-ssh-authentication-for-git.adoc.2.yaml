@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-push-task-run-2 #<1>
+spec:
+  taskRunTemplate:
+    serviceAccountName: build-bot #<2>
+  taskRef:
+    name: build-push #<3>

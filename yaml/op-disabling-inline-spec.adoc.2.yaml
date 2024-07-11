@@ -1,0 +1,8 @@
+apiVersion: operator.tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: taskRunInline
+spec:
+  taskSpec:
+    steps:
+# ...

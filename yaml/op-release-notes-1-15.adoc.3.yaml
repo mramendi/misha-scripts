@@ -1,0 +1,14 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: create-configmap-template
+spec:
+  params:
+    - name: action
+  resourcetemplates:
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        generateName: sample-
+      data:
+        field: "Action is : $(tt.params.action)"

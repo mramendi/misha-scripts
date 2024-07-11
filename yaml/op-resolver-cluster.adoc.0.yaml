@@ -1,0 +1,10 @@
+# ...
+  resolver: cluster
+  params:
+  - name: name
+    value: <name>
+  - name: namespace
+    value: <namespace>
+  - name: kind
+    value: [pipeline|task]
+# ...

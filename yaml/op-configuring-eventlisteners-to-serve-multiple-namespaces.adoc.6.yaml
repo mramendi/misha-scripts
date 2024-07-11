@@ -1,0 +1,23 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: Trigger
+metadata:
+  name: trigger
+  namespace: foo
+spec:
+  taskRunTemplate:
+    serviceAccountName: foo-trigger-sa
+  interceptors:
+    - ref:
+        name: "github"
+      params:
+        - name: "secretRef"
+          value:
+            secretName: github-secret
+            secretKey: secretToken
+        - name: "eventTypes"
+          value: ["push"]
+  bindings:
+    - ref: vote-app
+  template:
+    ref: vote-app
+#...

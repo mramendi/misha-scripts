@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-container-task-run-2 #<1>
+spec:
+  taskRunTemplate:
+    serviceAccountName: container-bot #<2>
+  taskRef:
+    name: build-container #<3>

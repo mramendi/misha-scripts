@@ -1,0 +1,15 @@
+apiVersion: operator.tekton.dev/v1
+kind: TektonResult
+metadata:
+  name: result
+spec:
+     options:
+        deployments:
+           tekton-results-watcher:
+              spec:
+                  template:
+                     spec:
+                        containers:
+                        - name: watcher
+                          args:
+                          - "--updateLogTimeout=60s"

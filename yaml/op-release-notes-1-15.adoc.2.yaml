@@ -1,0 +1,11 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    options:
+      configMaps:
+          config-defaults:
+              data:
+                   default-imagepullbackoff-timeout: "5m"

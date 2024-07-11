@@ -1,0 +1,17 @@
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: repo
+  namespace: ns
+spec:
+  url: "https://github.com/owner/repo"
+  git_provider:
+    type: github
+    secret:
+      name: "owner-token"
+  incoming:
+    - targets:
+      - main
+      secret:
+        name: repo-incoming-secret
+      type: webhook-url

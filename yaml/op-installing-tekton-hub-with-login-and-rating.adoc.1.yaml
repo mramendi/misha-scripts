@@ -1,0 +1,40 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines #<1>
+  db: #<2>                     
+    secret: tekton-hub-db #<3> 
+
+  categories: #<4>             
+    - Automation
+    - Build Tools
+    - CLI
+    - Cloud
+    - Code Quality
+#      ...
+
+  catalogs: #<5>               
+    - name: tekton
+      org: tektoncd
+      type: community
+      provider: github
+      url: https://github.com/tektoncd/catalog
+      revision: main
+
+  scopes: #<6>                  
+    - name: agent:create
+      users: [<username>]
+    - name: catalog:refresh
+      users: [<username>]
+    - name: config:refresh
+      users: [<username>]
+
+  default: #<7>                  
+    scopes:
+      - rating:read
+      - rating:write
+
+  api:
+    catalogRefreshInterval: 30m #<8>   

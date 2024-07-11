@@ -1,0 +1,30 @@
+apiVersion: v1
+data:
+  Dockerfile: |
+    ARG BASE_IMG=registry.access.redhat.com/ubi9/ubi
+    FROM $BASE_IMG AS buildah-runner
+    RUN dnf -y update && \
+        dnf -y install git && \
+        dnf clean all
+    CMD git
+kind: ConfigMap
+metadata:
+  name: dockerfile # #<1>
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: buildah-as-user-1000
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipelines-sa-userid-1000 # #<2>
+  params:
+  - name: IMAGE
+    value: image-registry.openshift-image-registry.svc:5000/test/buildahuser
+  taskRef:
+    kind: Task
+    name: buildah-as-user
+  workspaces:
+  - configMap:
+      name: dockerfile # #<3>
+    name: source

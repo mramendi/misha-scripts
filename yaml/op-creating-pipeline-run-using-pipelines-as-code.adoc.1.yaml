@@ -1,0 +1,8 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-push-on-main
+annotations:
+  pipelinesascode.tekton.dev/on-target-branch: "[refs/heads/main]" #<1>
+  pipelinesascode.tekton.dev/on-event: "[push]"
+# ...

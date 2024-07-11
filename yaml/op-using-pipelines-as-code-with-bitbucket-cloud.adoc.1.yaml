@@ -1,0 +1,8 @@
+#...
+spec:
+  git_provider:
+    user: "<BITBUCKET_USERNAME>"
+    secret:
+      name: "bitbucket-cloud-token"
+      key: "provider.token"
+#...

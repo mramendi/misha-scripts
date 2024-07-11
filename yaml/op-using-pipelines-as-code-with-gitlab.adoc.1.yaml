@@ -1,0 +1,6 @@
+#...
+spec:
+  git_provider:
+    secret:
+      name: "gitlab-webhook-config"
+#...

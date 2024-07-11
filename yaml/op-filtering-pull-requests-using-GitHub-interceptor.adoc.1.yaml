@@ -1,0 +1,31 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-add-changed-files-pr-listener
+spec:
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+          - name: "secretRef"
+            value:
+              secretName: github-secret
+              secretKey: secretToken
+          - name: "eventTypes"
+            value: ["pull_request", "push"]
+          - name: "addChangedFiles"
+            value:
+              enabled: true
+              personalAccessToken:
+                secretName: github-pat
+                secretKey: token
+        - ref:
+            name: cel
+          params:
+          - name: filter
+            value: extensions.changed_files.matches('controllers/')
+#...
