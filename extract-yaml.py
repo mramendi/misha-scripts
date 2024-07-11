@@ -3,10 +3,11 @@
 # This script extracts YAML scripts from modules
 # Plase it in the modules directory and run it
 # It scans all *.adoc files for YAML sources moarked with [source,yaml]
-# A file named extracted.yaml is output, containing all the snippets with the file names they are from
+# The subdirectory "yaml" is created and filled with YAML files named according to their source files
 # Subdirectories ar NOT scanned
 
 import os
+from pathlib import Path
 
 def comment_out_callouts_ellipses(in_s):
     unprocessed = in_s
@@ -36,12 +37,11 @@ def comment_out_callouts_ellipses(in_s):
 
 
 
+Path("yaml").mkdir(exist_ok=True)
 
-
-
-out = open("extracted.yaml","w")
 
 for entry in os.scandir("."):
+    filenum = 0
     if entry.is_dir():
         continue
     fname=entry.name
@@ -53,12 +53,14 @@ for entry in os.scandir("."):
         line = file_lines.pop(0)
 
         if line.replace(" ","").find("[source,yaml") >= 0:
+            out = open("yaml/"+fname+"."+str(filenum)+".yaml","w")
+            filenum += 1
             try:
                 tearline = file_lines.pop(0)
                 while (tearline.strip() != "----"):
                     tearline = file_lines.pop(0)
 
-                out.write("# "+fname+"\n")
+
                 scriptline = file_lines.pop(0)
                 while (scriptline.strip() != "----"):
 
@@ -66,4 +68,4 @@ for entry in os.scandir("."):
                     scriptline = file_lines.pop(0)
             except IndexError:
                 print(f"WARNING: source block ended prematurely in {fname}")
-            out.write("\n")
+            out.close()
