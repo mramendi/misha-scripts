@@ -1,0 +1,40 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        options:
+          configMaps:
+            pac-config-logging:
+              data:
+                loglevel.pac-watcher: warn #<1>
+                loglevel.pipelines-as-code-webhook: warn #<2>
+                loglevel.pipelinesascode: warn #<3>
+                zap-logger-config: |
+                  {
+                    "level": "info",
+                    "development": false,
+                    "sampling": {
+                      "initial": 100,
+                      "thereafter": 100
+                    },
+                    "outputPaths": ["stdout"],
+                    "errorOutputPaths": ["stderr"],
+                    "encoding": "json",
+                    "encoderConfig": {
+                      "timeKey": "ts",
+                      "levelKey": "level",
+                      "nameKey": "logger",
+                      "callerKey": "caller",
+                      "messageKey": "msg",
+                      "stacktraceKey": "stacktrace",
+                      "lineEnding": "",
+                      "levelEncoder": "",
+                      "timeEncoder": "iso8601",
+                      "durationEncoder": "",
+                      "callerEncoder": ""
+                    }
+                  }

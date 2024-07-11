@@ -1,0 +1,10 @@
+#...
+spec:
+  params:
+    - name: company
+      value: "ABC Company"
+      filter:
+        - name: event
+          value: |
+      pac.event_type == "pull_request"
+#...

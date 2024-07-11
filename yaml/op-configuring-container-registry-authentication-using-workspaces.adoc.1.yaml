@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: skopeo-copy
+spec:
+  workspaces:
+    - name: dockerconfig #<1>
+      description: Includes a docker `config.json`
+  steps:
+    - name: clone
+      image: quay.io/skopeo/stable:v1.8.0
+      env:
+      - name: DOCKER_CONFIG
+        value: $(workspaces.dockerconfig.path) #<2>
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+        skopeo copy docker://docker.io/library/ubuntu:latest docker://quay.io/example_repository/ubuntu-copy:latest

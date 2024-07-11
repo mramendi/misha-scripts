@@ -1,0 +1,9 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  hub:
+    params:
+      - name: enable-devconsole-integration
+        value: false

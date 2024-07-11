@@ -1,0 +1,15 @@
+[...]
+tasks:
+  - name:
+      taskRef:
+        name: github-add-comment
+      params:
+        - name: REQUEST_URL
+          value: "{{ repo_url }}/pull/{{ pull_request_number }}" #<1>
+        - name: COMMENT_OR_FILE
+          value: "Pipelines as Code IS GREAT!"
+        - name: GITHUB_TOKEN_SECRET_NAME
+          value: "{{ git_auth_secret }}"
+        - name: GITHUB_TOKEN_SECRET_KEY
+          value: "git-provider-token"
+#...

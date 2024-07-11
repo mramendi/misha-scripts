@@ -1,0 +1,12 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: true
+        settings:
+          secret-github-app-token-scoped: false
+          secret-github-app-scope-extra-repos: "owner2/project2, owner3/project3"

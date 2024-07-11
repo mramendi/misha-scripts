@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: sbom-task # #<1>
+  annotations:
+    task.output.location: results  # #<2>
+    task.results.format: application/text
+    task.results.key: LINK_TO_SBOM  # #<3>
+    task.results.type: external-link  # #<4>
+spec:
+  results:
+    - description: Contains the SBOM link  # #<5>
+      name: LINK_TO_SBOM
+  steps:
+    - name: print-sbom-results
+      image: quay.io/image  # #<6>
+      script: | # #<7>
+        #!/bin/sh
+        syft version
+        syft quay.io/<username>/quarkus-demo:v2 --output cyclonedx-json=sbom-image.json
+        echo 'BEGIN SBOM'
+        cat sbom-image.json
+        echo 'END SBOM'
+        echo 'quay.io/user/workloads/<namespace>/node-express/node-express:build-8e536-1692702836' | tee $(results.LINK_TO_SBOM.path) # #<8>

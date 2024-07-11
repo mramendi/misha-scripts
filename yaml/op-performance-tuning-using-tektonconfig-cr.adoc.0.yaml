@@ -1,0 +1,13 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    performance:
+      disable-ha: false
+      buckets: 7
+      replicas: 5
+      threads-per-controller: 2
+      kube-api-qps: 5.0
+      kube-api-burst: 10

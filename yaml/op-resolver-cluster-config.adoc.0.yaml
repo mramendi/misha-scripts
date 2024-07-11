@@ -1,0 +1,11 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    cluster-resolver-config:
+      default-kind: pipeline # #<1>
+      default-namespace: namespace1 # #<2>
+      allowed-namespaces: namespace1, namespace2 # #<3>
+      blocked-namespaces: namespace3, namespace4 # #<4>

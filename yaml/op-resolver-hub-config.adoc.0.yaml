@@ -1,0 +1,14 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    hub-resolver-config:
+      default-tekton-hub-catalog: Tekton # #<1>
+      default-artifact-hub-task-catalog: tekton-catalog-tasks # #<2>
+      default-artifact-hub-pipeline-catalog: tekton-catalog-pipelines # #<3>
+      defailt-kind: pipeline # #<4>
+      default-type: tekton # #<5>
+      tekton-hub-api: "https://my-custom-tekton-hub.example.com" # #<6>
+      artifact-hub-api: "https://my-custom-artifact-hub.example.com" # #<7>

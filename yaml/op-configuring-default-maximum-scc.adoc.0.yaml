@@ -1,0 +1,11 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+#  ...
+  platforms:
+    openshift:
+      scc:
+        default: "restricted-v2" # #<1>
+        maxAllowed: "privileged" # #<2>

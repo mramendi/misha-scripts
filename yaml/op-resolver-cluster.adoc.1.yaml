@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: cluster-pipeline-reference-demo
+spec:
+  pipelineRef:
+    resolver: cluster
+    params:
+    - name: name
+      value: some-pipeline
+    - name: namespace
+      value: test-namespace
+    - name: kind
+      value: pipeline
+  params:
+  - name: sample-pipeline-parameter
+    value: test

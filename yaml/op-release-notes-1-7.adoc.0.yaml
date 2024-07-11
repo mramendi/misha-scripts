@@ -1,0 +1,13 @@
+#...
+spec:
+  profile: all
+  targetNamespace: openshift-pipelines
+  addon:
+    params:
+    - name: clusterTasks
+      value: "true"
+    - name: pipelineTemplates
+      value: "true"
+    - name: communityClusterTasks
+      value: "false"
+#...

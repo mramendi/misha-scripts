@@ -1,0 +1,14 @@
+apiVersion: operator.tekton.dev/v1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        additionalPACControllers:
+          pac_controller_2:  # #<1>
+            enable: true    # #<2>
+            secretName: pac_secret_2  # #<3>
+            settings: #  #<4>
+# ...

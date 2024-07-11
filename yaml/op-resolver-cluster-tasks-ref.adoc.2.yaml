@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-source
+spec:
+# ...
+  tasks:
+  - name: clone-repo
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: URL
+      value: "https://github.com/example/repo.git"
+    workspaces:
+    - name: output
+      workspace: shared-workspace

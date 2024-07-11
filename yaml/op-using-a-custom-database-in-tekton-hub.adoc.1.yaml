@@ -1,0 +1,12 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines
+  db:                      
+    secret: tekton-hub-db 
+  api:
+    hubConfigUrl: https://raw.githubusercontent.com/tektoncd/hub/main/config.yaml
+    catalogRefreshInterval: 30m
+#...

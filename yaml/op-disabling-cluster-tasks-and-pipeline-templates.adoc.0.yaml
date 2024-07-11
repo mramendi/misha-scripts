@@ -1,0 +1,13 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  addon:
+    params:
+      - name: clusterTasks
+        value: 'false'
+      - name: pipelineTemplates
+        value: 'false'
+      - name: communityClusterTasks
+        value: 'true'
