@@ -1,0 +1,4430 @@
+# op-installing-tekton-hub-with-login-and-rating.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-hub-api
+  namespace: openshift-pipelines
+type: Opaque
+stringData:
+  GH_CLIENT_ID: #<1>
+  GH_CLIENT_SECRET: #<2>
+  GL_CLIENT_ID: #<3>
+  GL_CLIENT_SECRET: #<4>
+  BB_CLIENT_ID: #<5>
+  BB_CLIENT_SECRET: #<6>
+  JWT_SIGNING_KEY: #<7>
+  ACCESS_JWT_EXPIRES_IN: #<8>
+  REFRESH_JWT_EXPIRES_IN: #<9>
+  AUTH_BASE_URL: #<10>
+  GHE_URL: #<11>
+  GLE_URL: #<12>
+
+# op-installing-tekton-hub-with-login-and-rating.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines #<1>
+  db: #<2>                     
+    secret: tekton-hub-db #<3> 
+
+  categories: #<4>             
+    - Automation
+    - Build Tools
+    - CLI
+    - Cloud
+    - Code Quality
+#      ...
+
+  catalogs: #<5>               
+    - name: tekton
+      org: tektoncd
+      type: community
+      provider: github
+      url: https://github.com/tektoncd/catalog
+      revision: main
+
+  scopes: #<6>                  
+    - name: agent:create
+      users: [<username>]
+    - name: catalog:refresh
+      users: [<username>]
+    - name: config:refresh
+      users: [<username>]
+
+  default: #<7>                  
+    scopes:
+      - rating:read
+      - rating:write
+
+  api:
+    catalogRefreshInterval: 30m #<8>   
+
+# op-adding-new-users-in-tekton-hub-configuration.adoc
+#...
+scopes:
+  - name: agent:create
+    users: [<username_1>, <username_2>] #<1>
+  - name: catalog:refresh
+    users: [<username_3>, <username_4>]
+  - name: config:refresh
+    users: [<username_5>, <username_6>]
+
+default:
+  scopes:
+    - rating:read
+    - rating:write
+#...
+
+# op-release-notes-1-14.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: remote-task-reference
+spec:
+  taskRef:
+    resolver: http
+    params:
+    - name: url
+      value: https://raw.githubusercontent.com/tektoncd-catalog/git-clone/main/task/git-clone/git-clone.yaml
+
+# op-release-notes-1-14.adoc
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: http-demo
+spec:
+  pipelineRef:
+    resolver: http
+    params:
+    - name: url
+      value: https://raw.githubusercontent.com/tektoncd/catalog/main/pipeline/build-push-gke-deploy/0.1/build-push-gke-deploy.yaml
+
+# op-release-notes-1-14.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-param-enum
+spec:
+  params:
+  - name: message
+    enum: ["v1", "v2"]
+    default: "v1"
+# ...
+
+# op-release-notes-1-14.adoc
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: git-api-demo-tr
+spec:
+  taskRef:
+    resolver: git
+    params:
+    - name: org
+      value: tektoncd
+    - name: repo
+      value: catalog
+    - name: revision
+      value: main
+    - name: pathInRepo
+      value: task/git-clone/0.6/git-clone.yaml
+    # create the my-secret-token secret in the namespace where the
+    # pipelinerun is created. The secret must  contain a GitHub personal access
+    # token in the token key of the secret.
+    - name: token
+      value: my-secret-token
+    - name: tokenKey
+      value: token
+    - name: scmType
+      value: github
+    - name: serverURL
+      value: https://ghe.mycompany.com
+
+# op-configuring-scc-namespace.adoc
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-namespace
+  annotations:
+    operator.tekton.dev/scc: nonroot
+
+# op-installing-pipelines-as-code-on-an-openshift-cluster.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: false
+        settings:
+          application-name: Pipelines as Code CI
+          auto-configure-new-github-repo: "false"
+          bitbucket-cloud-check-source-ip: "true"
+          hub-catalog-name: tekton
+          hub-url: https://api.hub.tekton.dev/v1
+          remote-tasks: "true"
+          secret-auto-create: "true"
+# ...
+
+# op-installing-pipelines-as-code-on-an-openshift-cluster.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: true
+        settings:
+          application-name: Pipelines as Code CI
+          auto-configure-new-github-repo: "false"
+          bitbucket-cloud-check-source-ip: "true"
+          hub-catalog-name: tekton
+          hub-url: https://api.hub.tekton.dev/v1
+          remote-tasks: "true"
+          secret-auto-create: "true"
+# ...
+
+# op-using-pipelines-as-code-with-github-webhook.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+  url: "https://github.com/owner/repo"
+  git_provider:
+    secret:
+      name: "github-webhook-config"
+      key: "provider.token" # Set this if you have a different key in your secret
+    webhook_secret:
+      name: "github-webhook-config"
+      key: "webhook.secret" # Set this if you have a different key for your secret
+
+# op-using-pipelines-as-code-with-github-webhook.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+# ...
+  git_provider:
+    secret:
+      name: "github-webhook-config"
+# ...
+
+# op-running-pipeline-run-and-task-run-with-custom-scc-and-service-account.adoc
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: my-scc is a close replica of anyuid scc. pipelines-scc has fsGroup - RunAsAny.
+  name: my-scc
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+groups:
+- system:cluster-admins
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- MKNOD
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
+
+# op-running-pipeline-run-and-task-run-with-custom-scc-and-service-account.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: <pipeline-run-name>
+spec:
+  pipelineRef:
+    name: <pipeline-cluster-task-name>
+  taskRunTemplate:
+    serviceAccountName: 'fsgroup-runasany'
+
+# op-running-pipeline-run-and-task-run-with-custom-scc-and-service-account.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: <task-run-name>
+spec:
+  taskRef:
+    name: <cluster-task-name>
+  taskRunTemplate:
+    serviceAccountName: 'fsgroup-runasany'
+
+# op-understanding-pipelines-resource-consumption.adoc
+spec:
+  steps:
+  - name: <step_name>
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 600m
+      limits:
+        memory: 4Gi
+        cpu: 900m
+
+# op-understanding-pipelines-resource-consumption.adoc
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: <limit_container_resource>
+spec:
+  limits:
+  - max:
+      cpu: "600m"
+      memory: "2Gi"
+    min:
+      cpu: "200m"
+      memory: "100Mi"
+    default:
+      cpu: "500m"
+      memory: "800Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "100Mi"
+    type: Container
+#...
+
+# op-default-pruner-configuration.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+# ...
+spec:
+  pruner:
+    resources:
+      - taskrun
+      - pipelinerun
+    keep: 100
+    prune-per-resource: false
+    schedule: "* 8 * * *"
+    startingDeadlineSeconds: 60
+# ...
+
+# op-validating-pull-requests-using-GitHub-interceptors.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-owners-listener
+spec:
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+            - name: "secretRef"
+              value:
+                secretName: github-secret
+                secretKey: secretToken
+            - name: "eventTypes"
+              value: ["pull_request", "issue_comment"]
+            - name: "githubOwners"
+              value: 
+                enabled: true
+                checkType: none
+#...
+
+# op-validating-pull-requests-using-GitHub-interceptors.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-owners-listener
+spec:
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+            - name: "secretRef"
+              value:
+                secretName: github-secret
+                secretKey: secretToken
+            - name: "eventTypes"
+              value: ["pull_request", "issue_comment"]
+            - name: "githubOwners"
+              value: 
+                enabled: true
+                personalAccessToken:
+                  secretName: github-token
+                  secretKey: secretToken
+                checkType: all  
+#...
+
+# op-creating-pipeline-templates-admin-console.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+# ...
+  namespace: openshift # #<1>
+  labels:
+    pipeline.openshift.io/runtime: <runtime> # #<2>
+    pipeline.openshift.io/type: <pipeline-type> # #<3>
+# ...
+
+# op-configuring-registry-authentication-sa.adoc
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: container-bot #<1>
+secrets:
+  - name: my-registry-credentials #<2>
+
+# op-configuring-registry-authentication-sa.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-container-task-run-2 #<1>
+spec:
+  taskRunTemplate:
+    serviceAccountName: container-bot #<2>
+  taskRef:
+    name: build-container #<3>
+
+# op-configuring-registry-authentication-sa.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: demo-pipeline #<1>
+  namespace: default
+spec:
+  taskRunTemplate:
+    serviceAccountName: container-bot #<2>
+  pipelineRef:
+    name: demo-pipeline #<3>
+
+# op-custom-parameter-expansion.adoc
+#...
+spec:
+  params:
+    - name: company
+      value: "ABC Company"
+#...
+
+# op-custom-parameter-expansion.adoc
+#...
+spec:
+  params:
+    - name: company
+      secretRef:
+        name: my-secret
+        key: companyname
+#...
+
+# op-custom-parameter-expansion.adoc
+#...
+spec:
+  params:
+    - name: company
+      value: "ABC Company"
+      filter:
+        - name: event
+          value: |
+      pac.event_type == "pull_request"
+#...
+
+# op-assembling-a-pipeline.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+spec:
+  workspaces:
+  - name: shared-workspace
+  params:
+  - name: deployment-name
+    type: string
+    description: name of the deployment to be patched
+  - name: git-url
+    type: string
+    description: url of the git repo for the code of deployment
+  - name: git-revision
+    type: string
+    description: revision to be used from repo of the code for deployment
+    default: "{pipelines-ver}"
+  - name: IMAGE
+    type: string
+    description: image to be built from the code
+  tasks:
+  - name: fetch-repository
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    params:
+    - name: URL
+      value: $(params.git-url)
+    - name: SUBDIRECTORY
+      value: ""
+    - name: DELETE_EXISTING
+      value: "true"
+    - name: REVISION
+      value: $(params.git-revision)
+  - name: build-image
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: buildah
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    params:
+    - name: IMAGE
+      value: $(params.IMAGE)
+    runAfter:
+    - fetch-repository
+  - name: apply-manifests
+    taskRef:
+      name: apply-manifests
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    runAfter:
+    - build-image
+  - name: update-deployment
+    taskRef:
+      name: update-deployment
+    params:
+    - name: deployment
+      value: $(params.deployment-name)
+    - name: IMAGE
+      value: $(params.IMAGE)
+    runAfter:
+    - apply-manifests
+
+# op-resolver-git-config-anon.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    git-resolver-config:
+      default-revision: main # #<1>
+      fetch-timeout: 1m # #<2>
+      default-url: https://github.com/tektoncd/catalog.git # #<3>
+
+# op-using-remote-task-annotations-with-pipelines-as-code.adoc
+#...
+  pipelinesascode.tekton.dev/task: "git-clone" #<1>
+#...
+
+# op-using-remote-task-annotations-with-pipelines-as-code.adoc
+#...
+  pipelinesascode.tekton.dev/task: "[git-clone, golang-test, tkn]"
+#...
+
+# op-using-remote-task-annotations-with-pipelines-as-code.adoc
+#...
+  pipelinesascode.tekton.dev/task: "git-clone"
+  pipelinesascode.tekton.dev/task-1: "golang-test"
+  pipelinesascode.tekton.dev/task-2: "tkn" #<1>
+#...
+
+# op-using-remote-task-annotations-with-pipelines-as-code.adoc
+#...
+  pipelinesascode.tekton.dev/task: "[git-clone:0.1]" #<1>
+#...
+
+# op-using-remote-task-annotations-with-pipelines-as-code.adoc
+#...
+  pipelinesascode.tekton.dev/task: "<https://remote.url/task.yaml>" #<1>
+#...
+
+# op-using-remote-task-annotations-with-pipelines-as-code.adoc
+#...
+pipelinesascode.tekton.dev/task: "<share/tasks/git-clone.yaml>" #<1>
+#...
+
+# op-changing-default-service-account.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    default-service-account: pipeline
+  trigger:
+    default-service-account: pipeline
+    enable-api-fields: stable
+
+# op-configuring-eventlisteners-to-serve-multiple-namespaces.adoc
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: el-sa
+---
+
+# op-configuring-eventlisteners-to-serve-multiple-namespaces.adoc
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: el-sel-clusterrole
+rules:
+- apiGroups: ["triggers.tekton.dev"]
+  resources: ["eventlisteners", "clustertriggerbindings", "clusterinterceptors", "triggerbindings", "triggertemplates", "triggers"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["impersonate"]
+#...
+
+# op-configuring-eventlisteners-to-serve-multiple-namespaces.adoc
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: el-mul-clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: el-sa
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: el-sel-clusterrole
+#...
+
+# op-configuring-eventlisteners-to-serve-multiple-namespaces.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: namespace-selector-listener
+spec:
+  taskRunTemplate:
+    serviceAccountName: el-sa
+  namespaceSelector:
+    matchNames:
+    - default
+    - foo
+#...
+
+# op-configuring-eventlisteners-to-serve-multiple-namespaces.adoc
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: foo-trigger-sa
+  namespace: foo
+#...
+
+# op-configuring-eventlisteners-to-serve-multiple-namespaces.adoc
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: triggercr-rolebinding
+  namespace: foo
+subjects:
+- kind: ServiceAccount
+  name: foo-trigger-sa
+  namespace: foo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-roles
+#...
+
+# op-configuring-eventlisteners-to-serve-multiple-namespaces.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: Trigger
+metadata:
+  name: trigger
+  namespace: foo
+spec:
+  taskRunTemplate:
+    serviceAccountName: foo-trigger-sa
+  interceptors:
+    - ref:
+        name: "github"
+      params:
+        - name: "secretRef"
+          value:
+            secretName: github-secret
+            secretKey: secretToken
+        - name: "eventTypes"
+          value: ["push"]
+  bindings:
+    - ref: vote-app
+  template:
+    ref: vote-app
+#...
+
+# op-cleaning-up-pipeline-run-using-pipelines-as-code.adoc
+#...
+  pipelinesascode.tekton.dev/max-keep-runs: "<max_number>" #<1>
+#...
+
+# op-release-notes-1-13.adoc
+  apiVersion: tekton.dev/v1
+  kind: Task
+  metadata:
+    name: uid-task
+  spec:
+    results:
+      - name: uid
+    steps:
+      - name: uid
+        image: alpine
+        command: ["/bin/sh", "-c"]
+        args:
+          - echo "1001" | tee $(results.uid.path)
+  ---
+  apiVersion: tekton.dev/v1
+  kind: PipelineRun
+  metadata:
+    name: uid-pipeline-run
+  spec:
+    pipelineSpec:
+      tasks:
+      - name: add-uid
+        taskRef:
+          name: uid-task
+      - name: show-uid
+        taskSpec:
+          steps:
+            - name: show-uid
+              image: alpine
+              command: ["/bin/sh", "-c"]
+              args:
+                - echo $(tasks.add-uid.results.uid)
+
+# op-configuring-container-registry-authentication-using-workspaces.adoc
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: skopeo-copy
+spec:
+  workspaces:
+    - name: dockerconfig
+      description: Includes a docker `config.json`
+# ...
+
+# op-configuring-container-registry-authentication-using-workspaces.adoc
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: skopeo-copy
+spec:
+  workspaces:
+    - name: dockerconfig #<1>
+      description: Includes a docker `config.json`
+  steps:
+    - name: clone
+      image: quay.io/skopeo/stable:v1.8.0
+      env:
+      - name: DOCKER_CONFIG
+        value: $(workspaces.dockerconfig.path) #<2>
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+        skopeo copy docker://docker.io/library/ubuntu:latest docker://quay.io/example_repository/ubuntu-copy:latest
+
+# op-using-ssh-authentication-in-git-type-tasks.adoc
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: example-git-task
+spec:
+  steps:
+    - name: example-git-step
+#     ...
+      script:
+        ln -s $HOME/.ssh /root/.ssh
+#     ...
+
+# op-mitigating-extra-pipeline-resource-consumption.adoc
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-min-max-demo-lr
+spec:
+  limits:
+  - max:
+      memory: 1Gi
+    min:
+      memory: 500Mi
+    type: Container
+
+# op-starting-a-task-run-pipeline-run-build-user.adoc
+apiVersion: v1
+data:
+  Dockerfile: |
+    ARG BASE_IMG=registry.access.redhat.com/ubi9/ubi
+    FROM $BASE_IMG AS buildah-runner
+    RUN dnf -y update && \
+        dnf -y install git && \
+        dnf clean all
+    CMD git
+kind: ConfigMap
+metadata:
+  name: dockerfile # #<1>
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: buildah-as-user-1000
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipelines-sa-userid-1000 # #<2>
+  params:
+  - name: IMAGE
+    value: image-registry.openshift-image-registry.svc:5000/test/buildahuser
+  taskRef:
+    kind: Task
+    name: buildah-as-user
+  workspaces:
+  - configMap:
+      name: dockerfile # #<3>
+    name: source
+
+# op-starting-a-task-run-pipeline-run-build-user.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-buildah-as-user-1000
+spec:
+  params:
+  - name: IMAGE
+  - name: URL
+  workspaces:
+  - name: shared-workspace
+  - name: sslcertdir
+    optional: true
+  tasks:
+  - name: fetch-repository # #<1>
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    params:
+    - name: URL
+      value: $(params.URL)
+    - name: SUBDIRECTORY
+      value: ""
+    - name: DELETE_EXISTING
+      value: "true"
+  - name: buildah
+    taskRef:
+      name: buildah-as-user # #<2>
+    runAfter:
+    - fetch-repository
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    - name: sslcertdir
+      workspace: sslcertdir
+    params:
+    - name: IMAGE
+      value: $(params.IMAGE)
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipelinerun-buildah-as-user-1000
+spec:
+  taskRunSpecs:
+    - pipelineTaskName: buildah
+      taskServiceAccountName: pipelines-sa-userid-1000 # #<3>
+  params:
+  - name: URL
+    value: https://github.com/openshift/pipelines-vote-api
+  - name: IMAGE
+    value: image-registry.openshift-image-registry.svc:5000/test/buildahuser
+  pipelineRef:
+    name: pipeline-buildah-as-user-1000
+  workspaces:
+  - name: shared-workspace # #<4>
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
+
+# op-resolver-bundle-config.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    bundles-resolver-config:
+      default-service-account: pipelines # #<1>
+      default-kind: task # #<2>
+
+# op-prepare-opc-for-results.adoc
+address: <tekton_results_route> # #<1>
+token: <authentication_token> # #<2>
+ssl:
+   roots_file_path: /home/example/cert.pem # #<3>
+   server_name_override: tekton-results-api-service.openshift-pipelines.svc.cluster.local # #<4>
+ service_account:
+   namespace: service_acc_1 #<5>
+   name: service_acc_1 #<5>
+
+# op-about-pipelinerun.adoc
+apiVersion: tekton.dev/v1 #<1>
+kind: PipelineRun #<2>
+metadata:
+  name: build-deploy-api-pipelinerun #<3>
+spec:
+  pipelineRef:
+    name: build-and-deploy #<4>
+  params: #<5>
+  - name: deployment-name
+    value: vote-api
+  - name: git-url
+    value: https://github.com/openshift-pipelines/vote-api.git
+  - name: IMAGE
+    value: image-registry.openshift-image-registry.svc:5000/pipelines-tutorial/vote-api
+  workspaces: #<6>
+  - name: shared-workspace
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 500Mi
+
+# op-results-concepts.adoc
+  kind: PipelineRun
+  spec:
+    params:
+      - name: message
+        value: five
+    timeouts:
+      pipeline: 1h0m0s
+    pipelineRef:
+      name: echo-pipeline
+    taskRunTemplate:
+      serviceAccountName: pipeline
+  status:
+    startTime: "2023-08-07T11:41:40Z"
+    conditions:
+      - type: Succeeded
+        reason: Succeeded
+        status: "True"
+        message: 'Tasks Completed: 1 (Failed: 0, Cancelled 0), Skipped: 0'
+        lastTransitionTime: "2023-08-07T11:41:49Z"
+    pipelineSpec:
+      tasks:
+        - name: echo-task
+          params:
+            - name: message
+              value: five
+          taskRef:
+            kind: Task
+            name: echo-task-pipeline
+      params:
+        - name: message
+          type: string
+    completionTime: "2023-08-07T11:41:49Z"
+    childReferences:
+      - kind: TaskRun
+        name: echo-pipeline-run-gmzrx-echo-task
+        apiVersion: tekton.dev/v1
+        pipelineTaskName: echo-task
+  metadata:
+    uid: 62c3b02e-f12b-416c-9771-c02af518f6d4
+    name: echo-pipeline-run-gmzrx
+    labels:
+      tekton.dev/pipeline: echo-pipeline
+    namespace: releasetest-js5tt
+    finalizers:
+      - chains.tekton.dev/pipelinerun
+    generation: 2
+    annotations:
+      results.tekton.dev/log: releasetest-js5tt/results/62c3b02e-f12b-416c-9771-c02af518f6d4/logs/c1e49dd8-d641-383e-b708-e3a02b6a4378
+      chains.tekton.dev/signed: "true"
+      results.tekton.dev/record: releasetest-js5tt/results/62c3b02e-f12b-416c-9771-c02af518f6d4/records/62c3b02e-f12b-416c-9771-c02af518f6d4
+      results.tekton.dev/result: releasetest-js5tt/results/62c3b02e-f12b-416c-9771-c02af518f6d4
+    generateName: echo-pipeline-run-
+    managedFields:
+      - time: "2023-08-07T11:41:39Z"
+        manager: kubectl-create
+        fieldsV1:
+          f:spec:
+            .: {}
+            f:params: {}
+            f:pipelineRef:
+              .: {}
+              f:name: {}
+          f:metadata:
+            f:generateName: {}
+        operation: Update
+        apiVersion: tekton.dev/v1
+        fieldsType: FieldsV1
+      - time: "2023-08-07T11:41:40Z"
+        manager: openshift-pipelines-controller
+        fieldsV1:
+          f:metadata:
+            f:labels:
+              .: {}
+              f:tekton.dev/pipeline: {}
+        operation: Update
+        apiVersion: tekton.dev/v1
+        fieldsType: FieldsV1
+      - time: "2023-08-07T11:41:49Z"
+        manager: openshift-pipelines-chains-controller
+        fieldsV1:
+          f:metadata:
+            f:finalizers:
+              .: {}
+              v:"chains.tekton.dev/pipelinerun": {}
+            f:annotations:
+              .: {}
+              f:chains.tekton.dev/signed: {}
+        operation: Update
+        apiVersion: tekton.dev/v1
+        fieldsType: FieldsV1
+      - time: "2023-08-07T11:41:49Z"
+        manager: openshift-pipelines-controller
+        fieldsV1:
+          f:status:
+            f:startTime: {}
+            f:conditions: {}
+            f:pipelineSpec:
+              .: {}
+              f:tasks: {}
+              f:params: {}
+            f:completionTime: {}
+            f:childReferences: {}
+        operation: Update
+        apiVersion: tekton.dev/v1
+        fieldsType: FieldsV1
+        subresource: status
+      - time: "2023-08-07T11:42:15Z"
+        manager: openshift-pipelines-results-watcher
+        fieldsV1:
+          f:metadata:
+            f:annotations:
+              f:results.tekton.dev/log: {}
+              f:results.tekton.dev/record: {}
+              f:results.tekton.dev/result: {}
+        operation: Update
+        apiVersion: tekton.dev/v1
+        fieldsType: FieldsV1
+    resourceVersion: "126429"
+    creationTimestamp: "2023-08-07T11:41:39Z"
+    deletionTimestamp: "2023-08-07T11:42:23Z"
+    deletionGracePeriodSeconds: 0
+  apiVersion: tekton.dev/v1
+
+# op-using-pipelines-as-code-with-bitbucket-cloud.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+  url: "https://bitbucket.com/workspace/repo"
+  branch: "main"
+  git_provider:
+    user: "<BITBUCKET_USERNAME>" #<1>
+    secret:
+      name: "bitbucket-cloud-token" #<2>
+      key: "provider.token" # Set this if you have a different key in your secret
+
+# op-using-pipelines-as-code-with-bitbucket-cloud.adoc
+#...
+spec:
+  git_provider:
+    user: "<BITBUCKET_USERNAME>"
+    secret:
+      name: "bitbucket-cloud-token"
+      key: "provider.token"
+#...
+
+# op-providing-secure-connection.adoc
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: route-passthrough-secured  #<1>
+spec:
+  host: <hostname>
+  to:
+    kind: Service
+    name: frontend #<1>
+  tls:
+    termination: reencrypt #<2>
+    key: [as in edge termination]
+    certificate: [as in edge termination]
+    caCertificate: [as in edge termination]
+    destinationCACertificate: |- #<3>
+      -----BEGIN CERTIFICATE-----
+      [...]
+      -----END CERTIFICATE-----
+
+# op-configuring-custom-sa-and-scc.adoc
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipelines-sa-userid-1000 # #<1>
+---
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+  name: pipelines-scc-userid-1000 # #<2>
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true # #<3>
+allowPrivilegedContainer: false
+allowedCapabilities: null
+apiVersion: security.openshift.io/v1
+defaultAddCapabilities: null
+fsGroup:
+  type: MustRunAs
+groups:
+- system:cluster-admins
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- MKNOD
+- KILL
+runAsUser: # #<4>
+  type: MustRunAs
+  uid: 1000
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pipelines-scc-userid-1000-clusterrole # #<5>
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - pipelines-scc-userid-1000
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pipelines-scc-userid-1000-rolebinding # #<6>
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pipelines-scc-userid-1000-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: pipelines-sa-userid-1000
+
+# op-using-private-repositories-with-pipelines-as-code.adoc
+#...
+  workspace:
+  - name: basic-auth
+    secret:
+      secretName: "{{ git_auth_secret }}"
+#...
+
+# op-using-private-repositories-with-pipelines-as-code.adoc
+#...
+workspaces:
+  - name basic-auth
+params:
+    - name: repo_url
+    - name: revision
+#...
+tasks:
+  workspaces:
+    - name: basic-auth
+      workspace: basic-auth
+#  ...
+  tasks:
+  - name: git-clone-from-catalog
+      taskRef:
+        name: git-clone #<1>
+      params:
+        - name: url
+          value: $(params.repo_url)
+        - name: revision
+          value: $(params.revision)
+#...
+
+# op-migrating-tekton-hub-data-to-an-existing-crunchy-postgres-database.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-hub-db
+  labels:
+    app: tekton-hub-db
+type: Opaque
+stringData:
+  POSTGRES_HOST: test-primary.openshift-operators.svc
+  POSTGRES_DB: test
+  POSTGRES_USER: test
+  POSTGRES_PASSWORD: woXOisU5>ocJiTF7y{{;1[Q(
+  POSTGRES_PORT: '5432'
+#...
+
+# op-migrating-tekton-hub-data-to-an-existing-crunchy-postgres-database.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines
+  db:
+    secret: tekton-hub-db
+#...
+
+# op-release-notes-1-12.adoc
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+# ...
+spec:
+  params:
+    - name: source_url
+      value: "{{ source_url }}"
+  pipelineSpec:
+    params:
+      - name: source_url
+# ...
+
+# op-disabling-inline-spec.adoc
+apiVersion: operator.tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipelineInline
+spec:
+  tasks:
+    taskSpec:
+# ...
+
+# op-disabling-inline-spec.adoc
+apiVersion: operator.tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipelineRunInline
+spec:
+  pipelineSpec:
+    tasks:
+# ...
+
+# op-disabling-inline-spec.adoc
+apiVersion: operator.tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: taskRunInline
+spec:
+  taskSpec:
+    steps:
+# ...
+
+# op-disabling-inline-spec.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    disable-inline-spec: "pipeline,pipelinerun,taskrun"
+# ...
+
+# op-using-pipelines-as-code-with-bitbucket-server.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+  url: "https://bitbucket.com/workspace/repo"
+  git_provider:
+    url: "https://bitbucket.server.api.url/rest" #<1>
+    user: "<BITBUCKET_USERNAME>" #<2>
+    secret: #<3>
+      name: "bitbucket-server-webhook-config"
+      key: "provider.token" # Set this if you have a different key in your secret
+    webhook_secret:
+      name: "bitbucket-server-webhook-config"
+      key: "webhook.secret" # Set this if you have a different key for your secret
+
+# op-using-pipelines-as-code-with-gitlab.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+  url: "https://gitlab.com/owner/repo" # The repository URL
+  git_provider:
+    #url: "https://gitlab.example.com/" ##<1>
+    secret:
+      name: "gitlab-webhook-config"
+      key: "provider.token" # Set this if you have a different key in your secret
+    webhook_secret:
+      name: "gitlab-webhook-config"
+      key: "webhook.secret" # Set this if you have a different key for your secret
+
+# op-using-pipelines-as-code-with-gitlab.adoc
+#...
+spec:
+  git_provider:
+    secret:
+      name: "gitlab-webhook-config"
+#...
+
+# op-release-notes-1-15.adoc
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: test-task
+spec:
+  steps:
+  - name: fetch-repository
+    stepRef:
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/tektoncd/catalog.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: stepaction/git-clone/0.1/git-clone
+    params:
+    - name: url
+      value: $(params.repo-url)
+    - name: revision
+      value: $(params.tag-name)
+    - name: output-path
+      value: $(workspaces.output.path)
+
+# op-release-notes-1-15.adoc
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  generateName: something-
+spec:
+  params:
+  - name: myWorkspaceSecret
+  steps:
+  - image: registry.redhat.io/ubi/ubi8-minimal:latest
+    script: |
+      echo “Hello World”
+  workspaces:
+  - name: myworkspace
+    secret:
+      secretName: $(params.myWorkspaceSecret)
+
+# op-release-notes-1-15.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    options:
+      configMaps:
+          config-defaults:
+              data:
+                   default-imagepullbackoff-timeout: "5m"
+
+# op-release-notes-1-15.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: create-configmap-template
+spec:
+  params:
+    - name: action
+  resourcetemplates:
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        generateName: sample-
+      data:
+        field: "Action is : $(tt.params.action)"
+
+# op-release-notes-1-15.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: simple-eventlistener
+spec:
+  serviceAccountName:  simple-tekton-robot
+  triggers:
+    - name: simple-trigger
+      bindings:
+      - ref: simple-binding
+      template:
+        ref: simple-template
+  resources:
+    kubernetesResource:
+      serviceType: NodePort
+      servicePort: 38080
+
+# op-release-notes-1-15.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: listener-loadbalancerclass
+spec:
+  serviceAccountName: tekton-triggers-example-sa
+  triggers:
+    - name: example-trig
+      bindings:
+        - ref: pipeline-binding
+        - ref: message-binding
+      template:
+        ref: pipeline-template
+  resources:
+    kubernetesResource:
+      serviceType: LoadBalancer
+      serviceLoadBalancerClass: private
+
+# op-release-notes-1-15.adoc
+apiVersion: operator.tekton.dev/v1
+kind: TektonResult
+metadata:
+  name: result
+spec:
+     options:
+        deployments:
+           tekton-results-watcher:
+              spec:
+                  template:
+                     spec:
+                        containers:
+                        - name: watcher
+                          args:
+                          - "--updateLogTimeout=60s"
+
+# op-alternative-approaches-compute-resource-quota-pipelines.adoc
+#...
+spec:
+  steps:
+    - name: step-with-limts
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 800m
+#...
+
+# op-disabling-the-service-monitor.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    params:
+       - name: enableMetrics
+         value: 'false'
+
+# op-enabling-monitoring-of-event-listeners-for-triggers-for-user-defined-projects.adoc
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: github-listener
+  annotations:
+    networkoperator.openshift.io/ignore-errors: ""
+  name: el-monitor
+  namespace: test
+spec:
+  endpoints:
+    - interval: 10s
+      port: http-metrics
+  jobLabel: name
+  namespaceSelector:
+    matchNames:
+      - test
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: EventListener
+      app.kubernetes.io/part-of: Triggers
+      eventlistener: github-listener
+#...
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+spec:
+# ...
+  tasks:
+# ...
+  - name: build-image
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: buildah
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: IMAGE
+      value: $(params.IMAGE)
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+# ...
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: update-repo
+spec:
+# ...
+  tasks:
+# ...
+  - name: push-to-repo
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-cli
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: GIT_SCRIPT
+      value: "git push"
+    - name: GIT_USER_NAME
+      value: "Example Developer"
+    - name: GIT_USER_EMAIL
+      value: "developer@example.com"
+    workspaces:
+    - name: ssh-directory
+      workspace: ssh-workspace # #<1>
+    - name: source
+      workspace: shared-workspace
+# ...
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-source
+spec:
+# ...
+  tasks:
+  - name: clone-repo
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: URL
+      value: "https://github.com/example/repo.git"
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+ name: kn-run
+spec:
+ pipelineSpec:
+   tasks:
+   - name: kn-run
+     taskRef:
+       resolver: cluster
+       params:
+       - name: kind
+         value: task
+       - name: name
+         value: kn
+       - name: namespace
+         value: openshift-pipelines
+     params:
+     - name: ARGS
+       value: [version]
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+ name: kn-apply-run
+spec:
+ pipelineSpec:
+   tasks:
+   - name: kn-apply-run
+     taskRef:
+       resolver: cluster
+       params:
+       - name: kind
+         value: task
+       - name: name
+         value: kn-apply
+       - name: namespace
+         value: openshift-pipelines
+     params:
+     - name: SERVICE
+       value: "hello"
+     - name: IMAGE
+       value: "gcr.io/knative-samples/helloworld-go:latest"
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+spec:
+# ...
+  tasks:
+# ...
+  - name: build-from-source
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: maven
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+# ...
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+ name: openshift-client-run
+spec:
+ pipelineSpec:
+   tasks:
+   - name: openshift-client-run
+     taskRef:
+       resolver: cluster
+       params:
+       - name: kind
+         value: task
+       - name: name
+         value: openshift-client
+       - name: namespace
+         value: openshift-pipelines
+     params:
+     - name: SCRIPT
+       value: "oc version"
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-deploy-image
+spec:
+# ...
+  tasks:
+  - name: copy-image
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: skopeo-copy
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: SOURCE_IMAGE_URL
+      value: "docker://internal.registry/myimage:latest"
+    - name: DESTINATION_IMAGE_URL
+      value: "docker://production.registry/myimage:v1.0"
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+
+# op-resolver-cluster-tasks-ref.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+ name: tkn-run
+spec:
+ pipelineSpec:
+   tasks:
+   - name: tkn-run
+     taskRef:
+       resolver: cluster
+       params:
+       - name: kind
+         value: task
+       - name: name
+         value: tkn
+       - name: namespace
+         value: openshift-pipelines
+     params:
+     - name: ARGS
+
+# op-using-incoming-webhook-with-pipelines-as-code.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: repo
+  namespace: ns
+spec:
+  url: "https://github.com/owner/repo"
+  git_provider:
+    type: github
+    secret:
+      name: "owner-token"
+  incoming:
+    - targets:
+      - main
+      secret:
+        name: repo-incoming-secret
+      type: webhook-url
+
+# op-using-incoming-webhook-with-pipelines-as-code.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repo-incoming-secret
+  namespace: ns
+type: Opaque
+stringData:
+  secret: <very-secure-shared-secret>
+
+# op-about-tasks.adoc
+apiVersion: tekton.dev/v1 #<1>
+kind: Task #<2>
+metadata:
+  name: apply-manifests #<3>
+spec: #<4>
+  workspaces:
+  - name: source
+  params:
+    - name: manifest_dir
+      description: The directory in source that contains yaml manifests
+      type: string
+      default: "k8s"
+  steps:
+    - name: apply
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      workingDir: /workspace/source
+      command: ["/bin/bash", "-c"]
+      args:
+        - |-
+          echo Applying manifests in $(params.manifest_dir) directory
+          oc apply -f $(params.manifest_dir)
+          echo -----------------------------------
+
+# op-release-notes-1-4.adoc
+fsGroup:
+  type: MustRunAs
+
+# op-release-notes-1-4.adoc
+params:
+  - name: github_json
+    value: $(body)
+
+# op-release-notes-1-4.adoc
+annotations:
+  triggers.tekton.dev/old-escape-quotes: "true"
+
+# op-about-finally_tasks.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: clone-cleanup-workspace #<1>
+spec:
+  workspaces:
+    - name: git-source #<2>
+  tasks:
+    - name: clone-app-repo #<3>
+      taskRef:
+        name: git-clone-from-catalog
+      params:
+        - name: url
+          value: https://github.com/tektoncd/community.git
+        - name: subdirectory
+          value: application
+      workspaces:
+        - name: output
+          workspace: git-source
+  finally:
+    - name: cleanup #<4>
+      taskRef: #<5>
+        name: cleanup-workspace
+      workspaces: #<6>
+        - name: source
+          workspace: git-source
+    - name: check-git-commit
+      params: #<7>
+        - name: commit
+          value: $(tasks.clone-app-repo.results.commit)
+      taskSpec: #<8>
+        params:
+          - name: commit
+        steps:
+          - name: check-commit-initialized
+            image: alpine
+            script: |
+              if [[ ! $(params.commit) ]]; then
+                exit 1
+              fi
+
+# op-entitlements-manual-copying.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: buildah-pr-test
+spec:
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: dockerconfig
+      secret:
+        secretName: regred
+    - name: rhel-entitlement  # #<1>
+      secret:
+        secretName: etc-pki-entitlement
+  pipelineSpec:
+    workspaces:
+      - name: shared-workspace
+      - name: dockerconfig
+      - name: rhel-entitlement  # #<2>
+    tasks:
+# ...
+      - name: buildah
+        taskRef:
+          resolver: cluster
+          params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+        workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: dockerconfig
+        - name: rhel-entitlement  # #<3>
+          workspace: rhel-entitlement
+        params:
+        - name: IMAGE
+          value: <image_where_you_want_to_push>
+
+# op-about-workspace.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+spec:
+  workspaces: #<1>
+  - name: shared-workspace
+  params:
+#...
+  tasks: #<2>
+  - name: build-image
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: buildah
+      - name: namespace
+        value: openshift-pipelines
+    workspaces: #<3>
+    - name: source #<4>
+      workspace: shared-workspace #<5>
+    params:
+    - name: TLSVERIFY
+      value: "false"
+    - name: IMAGE
+      value: $(params.IMAGE)
+    runAfter:
+    - fetch-repository
+  - name: apply-manifests
+    taskRef:
+      name: apply-manifests
+    workspaces: #<6>
+    - name: source
+      workspace: shared-workspace
+    runAfter:
+      - build-image
+#...
+
+# op-about-workspace.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: build-deploy-api-pipelinerun
+spec:
+  pipelineRef:
+    name: build-and-deploy
+  params:
+#...
+
+  workspaces: #<1>
+  - name: shared-workspace #<2>
+    volumeClaimTemplate: #<3>
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 500Mi
+
+# op-supported-parameters-tekton-chains-configuration.adoc
+chains.tekton.dev/transparency-upload: "true"
+
+# op-using-a-custom-database-in-tekton-hub.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-hub-db
+  labels:
+    app: tekton-hub-db
+type: Opaque
+stringData:
+  POSTGRES_HOST: <The name of the host of the database>
+  POSTGRES_DB: <Name of the database>
+  POSTGRES_USER: <username>
+  POSTGRES_PASSWORD: <password>
+  POSTGRES_PORT: <The port that the database is listening on>
+#...
+
+# op-using-a-custom-database-in-tekton-hub.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines
+  db:                      
+    secret: tekton-hub-db 
+  api:
+    hubConfigUrl: https://raw.githubusercontent.com/tektoncd/hub/main/config.yaml
+    catalogRefreshInterval: 30m
+#...
+
+# op-about-whenexpression.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun #<1>
+metadata:
+  generateName: guarded-pr-
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  pipelineSpec:
+    params:
+      - name: path
+        type: string
+        description: The path of the file to be created
+    workspaces:
+      - name: source
+        description: |
+          This workspace is shared among all the pipeline tasks to read/write common resources
+    tasks:
+      - name: create-file #<2>
+        when:
+          - input: "$(params.path)"
+            operator: in
+            values: ["README.md"]
+        workspaces:
+          - name: source
+            workspace: source
+        taskSpec:
+          workspaces:
+            - name: source
+              description: The workspace to create the readme file in
+          steps:
+            - name: write-new-stuff
+              image: ubuntu
+              script: 'touch $(workspaces.source.path)/README.md'
+      - name: check-file
+        params:
+          - name: path
+            value: "$(params.path)"
+        workspaces:
+          - name: source
+            workspace: source
+        runAfter:
+          - create-file
+        taskSpec:
+          params:
+            - name: path
+          workspaces:
+            - name: source
+              description: The workspace to check for the file
+          results:
+            - name: exists
+              description: indicates whether the file exists or is missing
+          steps:
+            - name: check-file
+              image: alpine
+              script: |
+                if test -f $(workspaces.source.path)/$(params.path); then
+                  printf yes | tee /tekton/results/exists
+                else
+                  printf no | tee /tekton/results/exists
+                fi
+      - name: echo-file-exists
+        when: #<3>
+          - input: "$(tasks.check-file.results.exists)"
+            operator: in
+            values: ["yes"]
+        taskSpec:
+          steps:
+            - name: echo
+              image: ubuntu
+              script: 'echo file exists'
+#...
+      - name: task-should-be-skipped-1
+        when: #<4>
+          - input: "$(params.path)"
+            operator: notin
+            values: ["README.md"]
+        taskSpec:
+          steps:
+            - name: echo
+              image: ubuntu
+              script: exit 1
+#...
+    finally:
+      - name: finally-task-should-be-executed
+        when: #<5>
+          - input: "$(tasks.echo-file-exists.status)"
+            operator: in
+            values: ["Succeeded"]
+          - input: "$(tasks.status)"
+            operator: in
+            values: ["Succeeded"]
+          - input: "$(tasks.check-file.results.exists)"
+            operator: in
+            values: ["yes"]
+          - input: "$(params.path)"
+            operator: in
+            values: ["README.md"]
+        taskSpec:
+          steps:
+            - name: echo
+              image: ubuntu
+              script: 'echo finally done'
+  params:
+    - name: path
+      value: README.md
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 16Mi
+
+# op-configuring-pipelines-as-code-logging.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        options:
+          configMaps:
+            pac-config-logging:
+              data:
+                loglevel.pac-watcher: warn #<1>
+                loglevel.pipelines-as-code-webhook: warn #<2>
+                loglevel.pipelinesascode: warn #<3>
+                zap-logger-config: |
+                  {
+                    "level": "info",
+                    "development": false,
+                    "sampling": {
+                      "initial": 100,
+                      "thereafter": 100
+                    },
+                    "outputPaths": ["stdout"],
+                    "errorOutputPaths": ["stderr"],
+                    "encoding": "json",
+                    "encoderConfig": {
+                      "timeKey": "ts",
+                      "levelKey": "level",
+                      "nameKey": "logger",
+                      "callerKey": "caller",
+                      "messageKey": "msg",
+                      "stacktraceKey": "stacktrace",
+                      "lineEnding": "",
+                      "levelEncoder": "",
+                      "timeEncoder": "iso8601",
+                      "durationEncoder": "",
+                      "callerEncoder": ""
+                    }
+                  }
+
+# op-configuring-pipelines-as-code-logging.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: true
+        options:
+          configMaps:
+            custom-pac-config-logging:
+              data:
+                loglevel.pac-watcher: warn
+                loglevel.pipelines-as-code-webhook: warn
+                loglevel.pipelinesascode: warn
+                zap-logger-config: |
+                  {
+                    "level": "info",
+                    "development": false,
+                    "sampling": {
+                      "initial": 100,
+                      "thereafter": 100
+                    },
+                    "outputPaths": ["stdout"],
+                    "errorOutputPaths": ["stderr"],
+                    "encoding": "json",
+                    "encoderConfig": {
+                      "timeKey": "ts",
+                      "levelKey": "level",
+                      "nameKey": "logger",
+                      "callerKey": "caller",
+                      "messageKey": "msg",
+                      "stacktraceKey": "stacktrace",
+                      "lineEnding": "",
+                      "levelEncoder": "",
+                      "timeEncoder": "iso8601",
+                      "durationEncoder": "",
+                      "callerEncoder": ""
+                    }
+                  }
+          deployments:
+            pipelines-as-code-controller:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - name: pac-controller
+                      env:
+                      - name: CONFIG_LOGGING_NAME
+                        value: custom-pac-config-logging
+            pipelines-as-code-watcher:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - name: pac-watcher
+                      env:
+                      - name: CONFIG_LOGGING_NAME
+                        value: custom-pac-config-logging
+            pipelines-as-code-webhook:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - name: pac-webhook
+                      env:
+                      - name: CONFIG_LOGGING_NAME
+                        value: custom-pac-config-logging
+
+# op-installing-crunchy-postgres-database-and-tekton-hub.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-hub-db
+  labels:
+    app: tekton-hub-db
+type: Opaque
+stringData:
+  POSTGRES_HOST: test-primary.openshift-operators.svc
+  POSTGRES_DB: test
+  POSTGRES_USER: <username>
+  POSTGRES_PASSWORD: <password>
+  POSTGRES_PORT: '5432'
+#...
+
+# op-installing-crunchy-postgres-database-and-tekton-hub.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines
+  db:
+    secret: tekton-hub-db
+#...
+
+# op-resolver-git.adoc
+# ...
+  resolver: git
+  params:
+  - name: url
+    value: <git_repository_url>
+  - name: revision
+    value: <branch_name>
+  - name: pathInRepo
+    value: <path_in_repository>
+# ...
+
+# op-resolver-git.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: git-pipeline-reference-demo
+spec:
+  pipelineRef:
+    resolver: git
+    params:
+    - name: url
+      value: https://github.com/tektoncd/catalog.git
+    - name: revision
+      value: main
+    - name: pathInRepo
+      value: pipeline/simple/0.1/simple.yaml
+  params:
+  - name: name
+    value: "testPipelineRun"
+  - name: sample-pipeline-parameter
+    value: test
+
+# op-resolver-git.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-with-git-task-reference-demo
+spec:
+  tasks:
+  - name: "git-task-reference-demo"
+    taskRef:
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/tektoncd/catalog.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: task/git-clone/0.6/git-clone.yaml
+    params:
+    - name: sample-task-parameter
+      value: test
+
+# op-resolver-git.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: git-task-reference-demo
+spec:
+  taskRef:
+    resolver: git
+    params:
+    - name: url
+      value: https://github.com/tektoncd/catalog.git
+    - name: revision
+      value: main
+    - name: pathInRepo
+      value: task/git-clone/0.6/git-clone.yaml
+  params:
+  - name: sample-task-parameter
+    value: test
+
+# op-filtering-pull-requests-using-GitHub-interceptor.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-add-changed-files-pr-listener
+spec:
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+          - name: "secretRef"
+            value:
+              secretName: github-secret
+              secretKey: secretToken
+          - name: "eventTypes"
+            value: ["pull_request", "push"]
+          - name: "addChangedFiles"
+            value:
+              enabled: true
+        - ref:
+            name: cel
+          params:
+          - name: filter
+            value: extensions.changed_files.matches('controllers/')
+#...
+
+# op-filtering-pull-requests-using-GitHub-interceptor.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-add-changed-files-pr-listener
+spec:
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+          - name: "secretRef"
+            value:
+              secretName: github-secret
+              secretKey: secretToken
+          - name: "eventTypes"
+            value: ["pull_request", "push"]
+          - name: "addChangedFiles"
+            value:
+              enabled: true
+              personalAccessToken:
+                secretName: github-pat
+                secretKey: token
+        - ref:
+            name: cel
+          params:
+          - name: filter
+            value: extensions.changed_files.matches('controllers/')
+#...
+
+# op-configuring-pipelines-control-plane.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    running-in-environment-with-injected-sidecars: true
+    metrics.taskrun.duration-type: histogram
+    metrics.pipelinerun.duration-type: histogram
+    await-sidecar-readiness: true
+    params:
+      - name: enableMetrics
+        value: 'true'
+    default-service-account: pipeline
+    require-git-ssh-secret-known-hosts: false
+    enable-tekton-oci-bundles: false
+    metrics.taskrun.level: task
+    metrics.pipelinerun.level: pipeline
+    enable-api-fields: stable
+    enable-provenance-in-status: false
+    enable-custom-tasks: true
+    disable-creds-init: false
+    disable-affinity-assistant: true
+
+# op-disabling-non-versioned-and-versioned-cluster-tasks.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  params:
+  - name: createRbacResource
+    value: "false"
+  profile: all
+  targetNamespace: openshift-pipelines
+  addon:
+    params:
+    - name: clusterTasks
+      value: "false"
+#...
+
+# op-installing-pipelines-operator-using-the-cli.adoc
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-pipelines-operator
+  namespace: openshift-operators
+spec:
+  channel:  <channel name> #<1>
+  name: openshift-pipelines-operator-rh #<2>
+  source: redhat-operators #<3>
+  sourceNamespace: openshift-marketplace #<4>
+
+# op-setting-up-openshift-pipelines-to-download-or-view-sboms.adoc
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: sbom-task # #<1>
+  annotations:
+    task.output.location: results  # #<2>
+    task.results.format: application/text
+    task.results.key: LINK_TO_SBOM  # #<3>
+    task.results.type: external-link  # #<4>
+spec:
+  results:
+    - description: Contains the SBOM link  # #<5>
+      name: LINK_TO_SBOM
+  steps:
+    - name: print-sbom-results
+      image: quay.io/image  # #<6>
+      script: | # #<7>
+        #!/bin/sh
+        syft version
+        syft quay.io/<username>/quarkus-demo:v2 --output cyclonedx-json=sbom-image.json
+        echo 'BEGIN SBOM'
+        cat sbom-image.json
+        echo 'END SBOM'
+        echo 'quay.io/user/workloads/<namespace>/node-express/node-express:build-8e536-1692702836' | tee $(results.LINK_TO_SBOM.path) # #<8>
+
+# op-setting-up-openshift-pipelines-to-download-or-view-sboms.adoc
+#...
+spec:
+  tasks:
+    - name: sbom-task  
+      taskRef: 
+        name: sbom-task # #<1>
+  results:
+    - name: IMAGE_URL  # #<2>
+      description: url
+      value: <oci_image_registry_url> # #<3>
+
+# op-resolver-cluster-config.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    cluster-resolver-config:
+      default-kind: pipeline # #<1>
+      default-namespace: namespace1 # #<2>
+      allowed-namespaces: namespace1, namespace2 # #<3>
+      blocked-namespaces: namespace3, namespace4 # #<4>
+
+# op-installing-results.adoc
+  apiVersion: operator.tekton.dev/v1alpha1
+  kind: TektonResult
+  metadata:
+    name: result
+  spec:
+    targetNamespace: openshift-pipelines
+    logs_api: true
+    log_level: debug
+    db_port: 5432
+    db_host: tekton-results-postgres-service.openshift-pipelines.svc.cluster.local
+    logs_path: /logs
+    logs_type: File
+    logs_buffer_size: 32768
+    auth_disable: true
+    tls_hostname_override: tekton-results-api-service.openshift-pipelines.svc.cluster.local
+    db_enable_auto_migration: true
+    server_port: 8080
+    prometheus_port: 9090
+
+# op-installing-results.adoc
+    logging_pvc_name: tekton-logs
+
+# op-installing-results.adoc
+    gcs_creds_secret_name: gcs-credentials
+    gcs_creds_secret_key: application_default_credentials.json # #<1>
+    gcs_bucket_name: bucket-name ##<2>
+
+# op-installing-results.adoc
+    secret_name: s3-credentials
+
+# op-installing-results.adoc
+    db_host: postgres.internal.example.com # #<1>
+    db_port: 5432 # #<2>
+    is_external_db: true
+
+# op-configuring-buildah-to-use-build-user.adoc
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: buildah-as-user
+spec:
+  description: >-
+    Buildah task builds source into a container image and
+    then pushes it to a container registry.
+    Buildah Task builds source into a container image using Project Atomic's
+    Buildah build tool.It uses Buildah's support for building from Dockerfiles,
+    using its buildah bud command.This command executes the directives in the
+    Dockerfile to assemble a container image, then pushes that image to a
+    container registry.
+  params:
+  - name: IMAGE
+    description: Reference of the image buildah will produce.
+  - name: BUILDER_IMAGE
+    description: The location of the buildah builder image.
+    default: registry.redhat.io/rhel8/buildah@sha256:99cae35f40c7ec050fed3765b2b27e0b8bbea2aa2da7c16408e2ca13c60ff8ee
+  - name: STORAGE_DRIVER
+    description: Set buildah storage driver
+    default: vfs
+  - name: DOCKERFILE
+    description: Path to the Dockerfile to build.
+    default: ./Dockerfile
+  - name: CONTEXT
+    description: Path to the directory to use as context.
+    default: .
+  - name: TLSVERIFY
+    description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+    default: "true"
+  - name: FORMAT
+    description: The format of the built container, oci or docker
+    default: "oci"
+  - name: BUILD_EXTRA_ARGS
+    description: Extra parameters passed for the build command when building images.
+    default: ""
+  - description: Extra parameters passed for the push command when pushing images.
+    name: PUSH_EXTRA_ARGS
+    type: string
+    default: ""
+  - description: Skip pushing the built image
+    name: SKIP_PUSH
+    type: string
+    default: "false"
+  results:
+  - description: Digest of the image just built.
+    name: IMAGE_DIGEST
+    type: string
+  workspaces:
+  - name: source
+  steps:
+  - name: build
+    securityContext:
+      runAsUser: 1000 #<1>
+    image: $(params.BUILDER_IMAGE)
+    workingDir: $(workspaces.source.path)
+    script: |
+      echo "Running as USER ID `id`" #<2>
+      buildah --storage-driver=$(params.STORAGE_DRIVER) bud \
+        $(params.BUILD_EXTRA_ARGS) --format=$(params.FORMAT) \
+        --tls-verify=$(params.TLSVERIFY) --no-cache \
+        -f $(params.DOCKERFILE) -t $(params.IMAGE) $(params.CONTEXT)
+      [[ "$(params.SKIP_PUSH)" == "true" ]] && echo "Push skipped" && exit 0
+      buildah --storage-driver=$(params.STORAGE_DRIVER) push \
+        $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
+        --digestfile $(workspaces.source.path)/image-digest $(params.IMAGE) \
+        docker://$(params.IMAGE)
+      cat $(workspaces.source.path)/image-digest | tee /tekton/results/IMAGE_DIGEST
+    volumeMounts:
+    - name: varlibcontainers
+      mountPath: /home/build/.local/share/containers #<3>
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
+
+# op-about-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1 #<1>
+kind: TriggerBinding #<2>
+metadata:
+  name: vote-app #<3>
+spec:
+  params: #<4>
+  - name: git-repo-url
+    value: $(body.repository.url)
+  - name: git-repo-name
+    value: $(body.repository.name)
+  - name: git-revision
+    value: $(body.head_commit.id)
+
+# op-about-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1 #<1>
+kind: TriggerTemplate #<2>
+metadata:
+  name: vote-app #<3>
+spec:
+  params: #<4>
+  - name: git-repo-url
+    description: The git repository url
+  - name: git-revision
+    description: The git revision
+    default: {pipelines-ver}
+  - name: git-repo-name
+    description: The name of the deployment to be created / patched
+
+  resourcetemplates: #<5>
+  - apiVersion: tekton.dev/v1
+    kind: PipelineRun
+    metadata:
+      name: build-deploy-$(tt.params.git-repo-name)-$(uid)
+    spec:
+      taskRunTemplate:
+        serviceAccountName: pipeline
+      pipelineRef:
+        name: build-and-deploy
+      params:
+      - name: deployment-name
+        value: $(tt.params.git-repo-name)
+      - name: git-url
+        value: $(tt.params.git-repo-url)
+      - name: git-revision
+        value: $(tt.params.git-revision)
+      - name: IMAGE
+        value: image-registry.openshift-image-registry.svc:5000/pipelines-tutorial/$(tt.params.git-repo-name)
+      workspaces:
+      - name: shared-workspace
+        volumeClaimTemplate:
+         spec:
+          accessModes:
+           - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi
+
+# op-about-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1 #<1>
+kind: Trigger #<2>
+metadata:
+  name: vote-trigger #<3>
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipeline #<4>
+  interceptors:
+    - ref:
+        name: "github" #<5>
+      params: #<6>
+        - name: "secretRef"
+          value:
+            secretName: github-secret
+            secretKey: secretToken
+        - name: "eventTypes"
+          value: ["push"]
+  bindings:
+    - ref: vote-app #<7>
+  template: #<8>
+     ref: vote-app
+---
+apiVersion: v1
+kind: Secret #<9>
+metadata:
+  name: github-secret
+type: Opaque
+stringData:
+  secretToken: "1234567"
+
+# op-about-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1 #<1>
+kind: EventListener #<2>
+metadata:
+  name: vote-app #<3>
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipeline #<4>
+  triggers:
+    - triggerRef: vote-trigger #<5>
+
+# op-specifying-pipelines-resource-quota-using-priority-class.adoc
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: pipeline1-pc
+value: 1000000
+description: "Priority class for pipeline1"
+
+# op-specifying-pipelines-resource-quota-using-priority-class.adoc
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pipeline1-rq
+spec:
+  hard:
+    cpu: "1000"
+    memory: 200Gi
+    pods: "10"
+  scopeSelector:
+    matchExpressions:
+    - operator : In
+      scopeName: PriorityClass
+      values: ["pipeline1-pc"]
+
+# op-specifying-pipelines-resource-quota-using-priority-class.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: maven-build
+spec:
+  params:
+  - name: GIT_URL
+  workspaces:
+  - name: local-maven-repo
+  - name: source
+  tasks:
+  - name: git-clone
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: source
+    params:
+    - name: URL
+      value: $(params.GIT_URL)
+  - name: build
+    taskRef:
+      name: mvn
+    runAfter: ["git-clone"]
+    params:
+    - name: GOALS
+      value: ["package"]
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    - name: source
+      workspace: source
+  - name: int-test
+    taskRef:
+      name: mvn
+    runAfter: ["build"]
+    params:
+    - name: GOALS
+      value: ["verify"]
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    - name: source
+      workspace: source
+  - name: gen-report
+    taskRef:
+      name: mvn
+    runAfter: ["build"]
+    params:
+    - name: GOALS
+      value: ["site"]
+    workspaces:
+    - name: maven-repo
+      workspace: local-maven-repo
+    - name: source
+      workspace: source
+
+# op-specifying-pipelines-resource-quota-using-priority-class.adoc
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: mvn
+spec:
+  workspaces:
+  - name: maven-repo
+  - name: source
+  params:
+  - name: GOALS
+    description: The Maven goals to run
+    type: array
+    default: ["package"]
+  steps:
+    - name: mvn
+      image: gcr.io/cloud-builders/mvn
+      workingDir: $(workspaces.source.path)
+      command: ["/usr/bin/mvn"]
+      args:
+        - -Dmaven.repo.local=$(workspaces.maven-repo.path)
+        - "$(params.GOALS)"
+
+# op-specifying-pipelines-resource-quota-using-priority-class.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: petclinic-run-
+spec:
+  pipelineRef:
+    name: maven-build
+  params:
+  - name: GIT_URL
+    value: https://github.com/spring-projects/spring-petclinic
+  taskRunTemplate:
+    podTemplate:
+      priorityClassName: pipeline1-pc
+  workspaces:
+  - name: local-maven-repo
+    emptyDir: {}
+  - name: source
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200M
+
+# op-configuring-basic-authentication-for-git.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: basic-user-pass #<1>
+  annotations:
+    tekton.dev/git-0: https://github.com
+type: kubernetes.io/basic-auth
+stringData:
+  username: <username> #<2>
+  password: <password> #<3>
+
+# op-configuring-basic-authentication-for-git.adoc
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: build-bot #<1>
+secrets:
+  - name: basic-user-pass #<2>
+
+# op-configuring-basic-authentication-for-git.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-push-task-run-2 #<1>
+spec:
+  taskRunTemplate:
+    serviceAccountName: build-bot #<2>
+  taskRef:
+    name: build-push #<3>
+
+# op-configuring-basic-authentication-for-git.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: demo-pipeline #<1>
+  namespace: default
+spec:
+  taskRunTemplate:
+    serviceAccountName: build-bot #<2>
+  pipelineRef:
+    name: demo-pipeline #<3>
+
+# op-scoping-github-token.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: true
+        settings:
+          secret-github-app-token-scoped: false
+          secret-github-app-scope-extra-repos: "owner2/project2, owner3/project3"
+
+# op-scoping-github-token.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: test
+  namespace: test-repo
+spec:
+  url: "https://github.com/linda/project"
+  settings:
+    github_app_token_scope_repos:
+    - "owner/project"
+    - "owner1/project1"
+
+# op-scoping-github-token.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: true
+        settings:
+          secret-github-app-token-scoped: false
+          secret-github-app-scope-extra-repos: "owner2/project2, owner3/project3"
+
+# op-scoping-github-token.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+ name: test
+ namespace: test-repo
+spec:
+ url: "https://github.com/linda/project"
+ settings:
+   github_app_token_scope_repos:
+   - "owner/project"
+   - "owner1/project1"
+
+# op-specifying-manual-approval-task.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: example-manual-approval-pipeline
+spec:
+  tasks:
+# ...
+  - name: example-manual-approval-task
+    taskRef:
+      apiVersion: openshift-pipelines.org/v1alpha1
+      kind: ApprovalTask
+    params:
+    - name: approvers
+      value:
+      - user1
+      - user2
+      - user3
+    - name: description
+      value: Example manual approval task - please approve or reject
+    - name: numberOfApprovalsRequired
+      value: '2'
+    - name: timeout
+      value: '60m'
+# ...
+
+# op-setting-up-openshift-pipelines-to-view-project-vulnerabilities.adoc
+# The format to extract vulnerability summary (adjust the jq command for different JSON structures).
+jq -rce \ 
+    '{vulnerabilities:{
+      critical: (.result.summary.CRITICAL),
+      high: (.result.summary.IMPORTANT),
+      medium: (.result.summary.MODERATE),
+      low: (.result.summary.LOW)
+      }}' scan_output.json | tee $(results.SCAN_OUTPUT.path)
+
+
+# op-setting-up-openshift-pipelines-to-view-project-vulnerabilities.adoc
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: vulnerability-scan  # #<1>
+  annotations:
+    task.output.location: results  # #<2>
+    task.results.format: application/json
+    task.results.key: SCAN_OUTPUT  # #<3>
+spec:
+  results:
+    - description: CVE result format  # #<4>
+      name: SCAN_OUTPUT
+  steps:
+    - name: roxctl  # #<5>
+      image: quay.io/roxctl-tool-image  # #<6>
+      env:
+        - name: ENV_VAR_NAME_1  # #<7>
+          valueFrom:
+            secretKeyRef:
+              key: secret_key_1            
+              name: secret_name_1
+      env:
+        - name: ENV_VAR_NAME_2
+          valueFrom:
+            secretKeyRef:
+              key: secret_key_2            
+              name: secret_name_2
+      script: | # #<8>
+        #!/bin/sh
+        
+        # Sample shell script
+
+        echo "ENV_VAR_NAME_1: " $ENV_VAR_NAME_1
+        echo "ENV_VAR_NAME_2: " $ENV_VAR_NAME_2
+        jq --version (adjust the jq command for different JSON structures)
+        curl -k -L -H "Authorization: Bearer $ENV_VAR_NAME_1" https://$ENV_VAR_NAME_2/api/cli/download/roxctl-linux --output ./roxctl
+        chmod +x ./roxctl 
+        echo "roxctl version"
+        ./roxctl version
+        echo "image from pipeline: " 
+        
+        # Replace the following line with your dynamic image logic
+        DYNAMIC_IMAGE=$(get_dynamic_image_logic_here)
+        echo "Dynamic image: $DYNAMIC_IMAGE"
+        ./roxctl image scan --insecure-skip-tls-verify -e $ENV_VAR_NAME_2 --image $DYNAMIC_IMAGE --output json  > roxctl_output.json
+        more roxctl_output.json
+        jq -rce \  # #<9>
+          '{vulnerabilities:{
+          critical: (.result.summary.CRITICAL),
+          high: (.result.summary.IMPORTANT),
+          medium: (.result.summary.MODERATE),
+          low: (.result.summary.LOW)
+            }}' scan_output.json | tee $(results.SCAN_OUTPUT.path)
+
+# op-setting-up-openshift-pipelines-to-view-project-vulnerabilities.adoc
+#...
+spec:
+  results:
+    - description: The common vulnerabilities and exposures (CVE) result
+      name: SCAN_OUTPUT
+      value: $(tasks.vulnerability-scan.results.SCAN_OUTPUT)
+
+# op-resolver-cluster.adoc
+# ...
+  resolver: cluster
+  params:
+  - name: name
+    value: <name>
+  - name: namespace
+    value: <namespace>
+  - name: kind
+    value: [pipeline|task]
+# ...
+
+# op-resolver-cluster.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: cluster-pipeline-reference-demo
+spec:
+  pipelineRef:
+    resolver: cluster
+    params:
+    - name: name
+      value: some-pipeline
+    - name: namespace
+      value: test-namespace
+    - name: kind
+      value: pipeline
+  params:
+  - name: sample-pipeline-parameter
+    value: test
+
+# op-resolver-cluster.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-with-cluster-task-reference-demo
+spec:
+  tasks:
+  - name: "cluster-task-reference-demo"
+    taskRef:
+      resolver: cluster
+      params:
+      - name: name
+        value: some-task
+      - name: namespace
+        value: test-namespace
+      - name: kind
+        value: task
+    params:
+    - name: sample-task-parameter
+      value: test
+
+# op-resolver-cluster.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: cluster-task-reference-demo
+spec:
+  taskRef:
+    resolver: cluster
+    params:
+    - name: name
+      value: some-task
+    - name: namespace
+      value: test-namespace
+    - name: kind
+      value: task
+  params:
+  - name: sample-task-parameter
+    value: test
+
+# op-using-remote-pipeline-annotations-with-pipelines-as-code.adoc
+#...
+    pipelinesascode.tekton.dev/pipeline: "<https://git.provider/raw/pipeline.yaml>" #<1>
+#...
+
+# op-using-remote-pipeline-annotations-with-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    pipelinesascode.tekton.dev/pipeline: "https://git.provider/raw/pipeline.yaml"
+    pipelinesascode.tekton.dev/task: "./my-git-clone-task.yaml"
+
+# op-running-a-pipeline.adoc
+$ tkn pipeline start build-and-deploy \
+    -w name=shared-workspace,volumeClaimTemplateFile=https://raw.githubusercontent.com/openshift/pipelines-tutorial/{pipelines-ver}/01_pipeline/03_persistent_volume_claim.yaml \
+    -p deployment-name=pipelines-vote-api \
+    -p git-url=https://github.com/openshift/pipelines-vote-api.git \
+    -p IMAGE='image-registry.openshift-image-registry.svc:5000/pipelines-tutorial/pipelines-vote-api' \
+    --use-param-defaults
+
+# op-running-a-pipeline.adoc
+$ tkn pipelinerun logs <pipelinerun_id> -f
+
+# op-running-a-pipeline.adoc
+$ tkn pipeline start build-and-deploy \
+    -w name=shared-workspace,volumeClaimTemplateFile=https://raw.githubusercontent.com/openshift/pipelines-tutorial/{pipelines-ver}/01_pipeline/03_persistent_volume_claim.yaml \
+    -p deployment-name=pipelines-vote-ui \
+    -p git-url=https://github.com/openshift/pipelines-vote-ui.git \
+    -p IMAGE='image-registry.openshift-image-registry.svc:5000/pipelines-tutorial/pipelines-vote-ui' \
+    --use-param-defaults
+
+# op-running-a-pipeline.adoc
+$ tkn pipelinerun logs <pipelinerun_id> -f
+
+# op-running-a-pipeline.adoc
+$ tkn pipelinerun list
+
+# op-running-a-pipeline.adoc
+
+ NAME                         STARTED      DURATION     STATUS
+ build-and-deploy-run-xy7rw   1 hour ago   2 minutes    Succeeded
+ build-and-deploy-run-z2rz8   1 hour ago   19 minutes   Succeeded
+
+# op-running-a-pipeline.adoc
+$ oc get route pipelines-vote-ui --template='http://{{.spec.host}}'
+
+# op-running-a-pipeline.adoc
+$ tkn pipeline start build-and-deploy --last
+
+# op-entitlements-shared-csi-driver.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: buildah-pr-test-csi
+spec:
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: dockerconfig
+      secret:
+        secretName: regred
+    - name: rhel-entitlement  # #<1>
+      csi:
+        readOnly: true
+        driver: csi.sharedresource.openshift.io
+        volumeAttributes:
+          sharedSecret: shared-rhel-entitlement
+  pipelineSpec:
+    workspaces:
+    - name: shared-workspace
+    - name: dockerconfig
+    - name: rhel-entitlement  # #<2>
+    tasks:
+# ...
+    - name: buildah
+      taskRef:
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: buildah
+        - name: namespace
+          value: openshift-pipelines
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+      - name: dockerconfig
+        workspace: dockerconfig
+      - name: rhel-entitlement  # #<3>
+        workspace: rhel-entitlement
+      params:
+      - name: IMAGE
+        value: <image_where_you_want_to_push>
+
+# op-disabling-automatic-creation-of-rbac-resources.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  params:
+  - name: createRbacResource
+    value: "false"
+#...
+
+# op-types-annotation-secrets.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-secret-basic
+  annotations:
+    tekton.dev/git-0: github.com
+    tekton.dev/git-1: gitlab.com
+type: kubernetes.io/basic-auth
+stringData:
+  username: <username> # #<1>
+  password: <password> # #<2>
+
+# op-types-annotation-secrets.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-secret-ssh
+  annotations:
+    tekton.dev/git-0: https://github.com
+type: kubernetes.io/ssh-auth
+stringData:
+  ssh-privatekey: # #<1>
+
+# op-types-annotation-secrets.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-secret-basic
+  annotations:
+    tekton.dev/docker-0: quay.io
+    tekton.dev/docker-1: my-registry.example.com
+type: kubernetes.io/basic-auth
+stringData:
+  username: <username> # #<1>
+  password: <password> # #<2>
+
+# op-adding-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: vote-app
+spec:
+  params:
+  - name: git-repo-url
+    value: $(body.repository.url)
+  - name: git-repo-name
+    value: $(body.repository.name)
+  - name: git-revision
+    value: $(body.head_commit.id)
+
+# op-adding-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: vote-app
+spec:
+  params:
+  - name: git-repo-url
+    description: The git repository url
+  - name: git-revision
+    description: The git revision
+    default: {pipelines-ver}
+  - name: git-repo-name
+    description: The name of the deployment to be created / patched
+
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1
+    kind: PipelineRun
+    metadata:
+      generateName: build-deploy-$(tt.params.git-repo-name)-
+    spec:
+      taskRunTemplate:
+        serviceAccountName: pipeline
+      pipelineRef:
+        name: build-and-deploy
+      params:
+      - name: deployment-name
+        value: $(tt.params.git-repo-name)
+      - name: git-url
+        value: $(tt.params.git-repo-url)
+      - name: git-revision
+        value: $(tt.params.git-revision)
+      - name: IMAGE
+        value: image-registry.openshift-image-registry.svc:5000/pipelines-tutorial/$(tt.params.git-repo-name)
+      workspaces:
+      - name: shared-workspace
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 500Mi
+
+# op-adding-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: Trigger
+metadata:
+  name: vote-trigger
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  bindings:
+    - ref: vote-app
+  template:
+    ref: vote-app
+
+# op-adding-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: vote-app
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  triggers:
+    - triggerRef: vote-trigger
+
+# op-adding-triggers.adoc
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: vote-app
+spec:
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  triggers:
+  - bindings:
+    - ref: vote-app
+    template:
+      ref: vote-app
+
+# op-adding-triggers.adoc
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: route-passthrough-secured #<1>
+spec:
+  host: <hostname>
+  to:
+    kind: Service
+    name: frontend #<1>
+  tls:
+    termination: reencrypt         #<2>
+    key: [as in edge termination]
+    certificate: [as in edge termination]
+    caCertificate: [as in edge termination]
+    destinationCACertificate: |-   #<3>
+      -----BEGIN CERTIFICATE-----
+      [...]
+      -----END CERTIFICATE-----
+
+# op-annotations-for-automatic-pruning-taskruns-pipelineruns.adoc
+kind: Namespace
+apiVersion: v1
+# ...
+spec:
+  annotations:
+    operator.tekton.dev/prune.resources: "taskrun, pipelinerun"
+    operator.tekton.dev/prune.keep-since: 7200
+# ...
+
+# op-resolver-bundle.adoc
+# ...
+  resolver: bundles
+  params:
+  - name: bundle
+    value: <fully_qualified_image_name>
+  - name: name
+    value: <resource_name>
+  - name: kind
+    value: [pipeline|task]
+# ...
+
+# op-resolver-bundle.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: bundle-pipeline-reference-demo
+spec:
+  pipelineRef:
+    resolver: bundles
+    params:
+    - name: bundle
+      value: registry.example.com:5000/simple/pipeline:latest
+    - name: name
+      value: hello-pipeline
+    - name: kind
+      value: pipeline
+  params:
+  - name: sample-pipeline-parameter
+    value: test
+  - name: username
+    value: "pipelines"
+
+# op-resolver-bundle.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-with-bundle-task-reference-demo
+spec:
+  tasks:
+  - name: "bundle-task-demo"
+    taskRef:
+      resolver: bundles
+      params:
+      - name: bundle
+        value: registry.example.com:5000/advanced/task:latest
+      - name: name
+        value: hello-world
+      - name: kind
+        value: task
+    params:
+    - name: sample-task-parameter
+      value: test
+
+# op-resolver-bundle.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: bundle-task-reference-demo
+spec:
+  taskRef:
+    resolver: bundles
+    params:
+    - name: bundle
+      value: registry.example.com:5000/simple/new_task:latest
+    - name: name
+      value: hello-world
+    - name: kind
+      value: task
+  params:
+  - name: sample-task-parameter
+    value: test
+
+# op-release-notes-1-7.adoc
+#...
+spec:
+  profile: all
+  targetNamespace: openshift-pipelines
+  addon:
+    params:
+    - name: clusterTasks
+      value: "true"
+    - name: pipelineTemplates
+      value: "true"
+    - name: communityClusterTasks
+      value: "false"
+#...
+
+# op-release-notes-1-7.adoc
+#...
+hub:
+  params:
+    - name: enable-devconsole-integration
+      value: "true"
+#...
+
+# op-release-notes-1-7.adoc
+securityContext:
+  capabilities:
+    add: ["SETFCAP"]
+
+# op-results-storage.adoc
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: tekton-logs
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+
+# op-results-storage.adoc
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: my_custom_secret
+    namespace: tekton-pipelines
+  type: Opaque
+  stringData:
+    S3_BUCKET_NAME: bucket1 # #<1>
+    S3_ENDPOINT: https://example.localhost.com # #<2>
+    S3_HOSTNAME_IMMUTABLE: "false"
+    S3_REGION: region-1 # #<3>
+    S3_ACCESS_KEY_ID: "1234" # #<4>
+    S3_SECRET_ACCESS_KEY: secret_key # #<5>
+    S3_MULTI_PART_SIZE: "5242880"
+
+# op-release-notes-1-6.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+  kind: TektonConfig
+  metadata:
+    name: config
+  spec:
+    pipeline:
+      disable-working-directory-overwrite: false
+      disable-home-env-overwrite: false
+#  ...
+
+# op-release-notes-1-6.adoc
+#...
+spec:
+  host: el-event-listener-q8c3w5-test-upgrade1.apps.ve49aws.aws.ospqa.com
+  port:
+    targetPort: 8000
+  to:
+    kind: Service
+    name: el-event-listener-q8c3w5
+    weight: 100
+  wildcardPolicy: None
+#...
+
+# op-release-notes-1-6.adoc
+#...
+spec:
+  host: el-event-listener-q8c3w5-test-upgrade1.apps.ve49aws.aws.ospqa.com
+  port:
+    targetPort: http-listener
+  to:
+    kind: Service
+    name: el-event-listener-q8c3w5
+    weight: 100
+  wildcardPolicy: None
+#...
+
+# op-modifying-catalog-refresh-interval-tekton-hub.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines #<1>
+  api:
+    catalogRefreshInterval: 30m #<2>
+
+# op-creating-and-verifying-task-run-signatures-without-any-additional-authentication.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+# ...
+    chain:
+      artifacts.oci.storage: ""
+      artifacts.taskrun.format: tekton
+      artifacts.taskrun.storage: tekton
+# ...
+
+# op-performance-tuning-using-tektonconfig-cr.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    performance:
+      disable-ha: false
+      buckets: 7
+      replicas: 5
+      threads-per-controller: 2
+      kube-api-qps: 5.0
+      kube-api-burst: 10
+
+# op-monitoring-pipeline-run-status-using-pipelines-as-code.adoc
+<filename>:<line>:<column>: <error message>
+
+# op-setting-concurrency-limits-in-repository-crd.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+# ...
+  concurrency_limit: <number>
+# ...
+
+
+# op-configuring-ssh-authentication-for-git.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ssh-key #<1>
+  annotations:
+    tekton.dev/git-0: github.com
+type: kubernetes.io/ssh-auth
+stringData:
+  ssh-privatekey: #<2>
+  known_hosts: #<3>
+
+# op-configuring-ssh-authentication-for-git.adoc
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: build-bot #<1>
+secrets:
+  - name: ssh-key #<2>
+
+# op-configuring-ssh-authentication-for-git.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-push-task-run-2 #<1>
+spec:
+  taskRunTemplate:
+    serviceAccountName: build-bot #<2>
+  taskRef:
+    name: build-push #<3>
+
+# op-configuring-ssh-authentication-for-git.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: demo-pipeline #<1>
+  namespace: default
+spec:
+  taskRunTemplate:
+    serviceAccountName: build-bot #<2>
+  pipelineRef:
+    name: demo-pipeline #<3>
+
+# op-about-taskrun.adoc
+apiVersion: tekton.dev/v1 #<1>
+kind: TaskRun #<2>
+metadata:
+  name: apply-manifests-taskrun #<3>
+spec: #<4>
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  taskRef: #<5>
+    kind: Task
+    name: apply-manifests
+  workspaces: #<6>
+  - name: source
+    persistentVolumeClaim:
+      claimName: source-pvc
+
+# op-configuring-default-maximum-scc.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+#  ...
+  platforms:
+    openshift:
+      scc:
+        default: "restricted-v2" # #<1>
+        maxAllowed: "privileged" # #<2>
+
+# op-limiting-secret-workspace-to-step.adoc
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone-build
+spec:
+  workspaces: # #<1>
+    - name: ssh-directory
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc.
+# ...
+  steps:
+    - name: clone
+      workspaces: # #<2>
+        - name: ssh-directory
+# ...
+    - name: build # #<3>
+# ...
+
+# op-configuring-git-ssh-authentication-using-workspaces.adoc
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  workspaces:
+    - name: ssh-directory
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc.
+
+# op-configuring-git-ssh-authentication-using-workspaces.adoc
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  workspaces:
+    - name: output
+      description: The git repo will be cloned onto the volume backing this Workspace.
+    - name: ssh-directory
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc. Copied to
+        the user's home before git commands are executed. Used to authenticate
+        with the git remote when performing the clone. Binding a Secret to this
+        Workspace is strongly recommended over other volume types
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: revision
+      description: Revision to checkout. (branch, tag, sha, ref, etc...)
+      type: string
+      default: ""
+    - name: gitInitImage
+      description: The image providing the git-init binary that this Task runs.
+      type: string
+      default: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.37.0"
+  results:
+    - name: commit
+      description: The precise commit SHA that was fetched by this Task.
+    - name: url
+      description: The precise URL that was fetched by this Task.
+  steps:
+    - name: clone
+      image: "$(params.gitInitImage)"
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+        # This is necessary for recent version of git
+        git config --global --add safe.directory '*'
+        cp -R "$(workspaces.ssh-directory.path)" "${HOME}"/.ssh # #<1>
+        chmod 700 "${HOME}"/.ssh
+        chmod -R 400 "${HOME}"/.ssh/*
+        CHECKOUT_DIR="$(workspaces.output.path)/"
+        /ko-app/git-init \
+          -url="$(params.url)" \
+          -revision="$(params.revision)" \
+          -path="${CHECKOUT_DIR}"
+        cd "${CHECKOUT_DIR}"
+        RESULT_SHA="$(git rev-parse HEAD)"
+        EXIT_CODE="$?"
+        if [ "${EXIT_CODE}" != 0 ] ; then
+          exit "${EXIT_CODE}"
+        fi
+        printf "%s" "${RESULT_SHA}" > "$(results.commit.path)"
+        printf "%s" "$(params.url)" > "$(results.url.path)"
+
+# op-disabling-cluster-tasks-and-pipeline-templates.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  addon:
+    params:
+      - name: clusterTasks
+        value: 'false'
+      - name: pipelineTemplates
+        value: 'false'
+      - name: communityClusterTasks
+        value: 'true'
+
+# op-chains-signing-secrets-skopeo.adoc
+apiVersion: v1
+data:
+  cosign.key: <Encoded <mykey>.private> # #<1>
+  cosign.password: <Encoded passphrase> # #<2>
+  cosign.pub: <Encoded <mykey>.pub> # #<3>
+immutable: true
+kind: Secret
+metadata:
+  name: signing-secrets
+# ...
+type: Opaque
+
+# op-release-notes-1-5.adoc
+#...
+pruner:
+  resources:
+    - pipelinerun
+    - taskrun
+  schedule: "*/5 * * * *" # cron schedule
+  keep: 2 # delete all keeping n
+#...
+
+# op-release-notes-1-5.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  profile: all
+  targetNamespace: openshift-pipelines
+  addon:
+    params:
+    - name: clusterTasks
+      value: "true"
+    - name: pipelineTemplates
+      value: "true"
+#...
+
+# op-release-notes-1-5.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  profile: all
+  targetNamespace: openshift-pipelines
+  pipeline:
+    params:
+    - name: enableMetrics
+      value: "true"
+#...
+
+# op-release-notes-1-5.adoc
+#...
+- name: deploy
+  params:
+  - name: SCRIPT
+    value: oc rollout status <deployment-name>
+  runAfter:
+    - build
+  taskRef:
+    kind: ClusterTask
+    name: openshift-client
+#...
+
+# op-release-notes-1-5.adoc
+#...
+steps:
+  - name: git
+    env:
+    - name: HOME
+      value: /root
+    image: $(params.BASE_IMAGE)
+    workingDir: $(workspaces.source.path)
+#...
+
+# op-configuring-tekton-chains.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  addon: {}
+  chain:
+    artifacts.taskrun.format: tekton
+  config: {}
+
+# op-about-pipelines.adoc
+apiVersion: tekton.dev/v1 #<1>
+kind: Pipeline #<2>
+metadata:
+  name: build-and-deploy #<3>
+spec: #<4>
+  workspaces: #<5>
+  - name: shared-workspace
+  params: #<6>
+  - name: deployment-name
+    type: string
+    description: name of the deployment to be patched
+  - name: git-url
+    type: string
+    description: url of the git repo for the code of deployment
+  - name: git-revision
+    type: string
+    description: revision to be used from repo of the code for deployment
+    default: "{pipelines-ver}"
+  - name: IMAGE
+    type: string
+    description: image to be built from the code
+  tasks: #<7>
+  - name: fetch-repository
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    params:
+    - name: URL
+      value: $(params.git-url)
+    - name: SUBDIRECTORY
+      value: ""
+    - name: DELETE_EXISTING
+      value: "true"
+    - name: REVISION
+      value: $(params.git-revision)
+  - name: build-image #<8>
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: buildah
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    params:
+    - name: TLSVERIFY
+      value: "false"
+    - name: IMAGE
+      value: $(params.IMAGE)
+    runAfter:
+    - fetch-repository
+  - name: apply-manifests #<9>
+    taskRef:
+      name: apply-manifests
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    runAfter: #<10>
+    - build-image
+  - name: update-deployment
+    taskRef:
+      name: update-deployment
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    params:
+    - name: deployment
+      value: $(params.deployment-name)
+    - name: IMAGE
+      value: $(params.IMAGE)
+    runAfter:
+    - apply-manifests
+
+# op-installing-tekton-hub-without-login-and-rating.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonHub
+metadata:
+  name: hub
+spec:
+  targetNamespace: openshift-pipelines #<1>
+  db:                      # Optional: If you want to use custom database
+    secret: tekton-hub-db  # Name of db secret should be `tekton-hub-db`
+
+  categories:              # Optional: If you want to use custom categories       
+    - Automation
+    - Build Tools
+    - CLI
+    - Cloud
+    - Code Quality
+    - ...
+
+  catalogs:                # Optional: If you want to use custom catalogs       
+    - name: tekton
+      org: tektoncd
+      type: community
+      provider: github
+      url: https://github.com/tektoncd/catalog
+      revision: main
+
+  scopes:                   # Optional: If you want to add new users        
+    - name: agent:create
+      users: [abc, qwe, pqr]
+    - name: catalog:refresh
+      users: [abc, qwe, pqr]
+    - name: config:refresh
+      users: [abc, qwe, pqr]
+
+  default:                   # Optional: If you want to add custom default scopes                               
+    scopes:
+      - rating:read
+      - rating:write
+
+  api:
+    catalogRefreshInterval: 30m #<2>   
+
+# op-resolver-hub-config.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    hub-resolver-config:
+      default-tekton-hub-catalog: Tekton # #<1>
+      default-artifact-hub-task-catalog: tekton-catalog-tasks # #<2>
+      default-artifact-hub-pipeline-catalog: tekton-catalog-pipelines # #<3>
+      defailt-kind: pipeline # #<4>
+      default-type: tekton # #<5>
+      tekton-hub-api: "https://my-custom-tekton-hub.example.com" # #<6>
+      artifact-hub-api: "https://my-custom-artifact-hub.example.com" # #<7>
+
+# op-pac-additional-controller.adoc
+apiVersion: operator.tekton.dev/v1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        additionalPACControllers:
+          pac_controller_2:  # #<1>
+            enable: true    # #<2>
+            secretName: pac_secret_2  # #<3>
+            settings: #  #<4>
+# ...
+
+# op-resolver-hub.adoc
+# ...
+  resolver: hub
+  params:
+  - name: catalog
+    value: <catalog>
+  - name: type
+    value: <catalog_type>
+  - name: kind
+    value: [pipeline|task]
+  - name: name
+    value: <resource_name>
+  - name: version
+    value: <resource_version>
+# ...
+
+# op-resolver-hub.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: hub-pipeline-reference-demo
+spec:
+  pipelineRef:
+    resolver: hub
+    params:
+    - name: catalog
+      value: tekton-catalog-pipelines
+    - name: type
+      value: artifact
+    - name: kind
+      value: pipeline
+    - name: name
+      value: example-pipeline
+    - name: version
+      value: "0.1"
+  params:
+  - name: sample-pipeline-parameter
+    value: test
+
+# op-resolver-hub.adoc
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-with-cluster-task-reference-demo
+spec:
+  tasks:
+  - name: "cluster-task-reference-demo"
+    taskRef:
+      resolver: hub
+      params:
+      - name: catalog
+        value: tekton-catalog-tasks
+      - name: type
+        value: artifact
+      - name: kind
+        value: task
+      - name: name
+        value: example-task
+      - name: version
+        value: "0.6"
+    params:
+    - name: sample-task-parameter
+      value: test
+
+# op-resolver-hub.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: cluster-task-reference-demo
+spec:
+  taskRef:
+    resolver: hub
+    params:
+    - name: catalog
+      value: tekton-catalog-tasks
+    - name: type
+      value: artifact
+    - name: kind
+      value: task
+    - name: name
+      value: example-task
+    - name: version
+      value: "0.6"
+  params:
+  - name: sample-task-parameter
+    value: test
+
+# op-enabling-manual-approval-gate.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: ManualApprovalGate
+metadata:
+  name: manual-approval-gate
+spec:
+  targetNamespace: openshift-pipelines
+
+# op-setting-annotations-labels-namespace.adoc
+apiVersion: operator.tekton.dev/v1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  targetNamespaceMetadata:
+    labels: {"example-label":"example-value"}
+    annotations: {"example-annotation":"example-value"}
+
+# op-resolver-git-config-scm.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    git-resolver-config:
+      default-revision: main # #<1>
+      fetch-timeout: 1m # #<2>
+      scm-type: github # #<3>
+      server-url: api.internal-github.com # #<4>
+      api-token-secret-name: github-auth-secret # #<5>
+      api-token-secret-key: github-auth-key # #<6>
+      api-token-secret-namespace: github-auth-namespace # #<7>
+      default-org: tektoncd # #<8>
+
+# op-authenticating-to-an-oci-registry.adoc
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-push-task-run-2
+spec:
+  taskRunTemplate:
+    serviceAccountName: build-bot #<1>
+  taskRef:
+    name: build-push
+#...
+
+# op-release-notes-1-8.adoc
+kind: Task
+apiVersion: tekton.dev/v1beta1
+metadata:
+  name: write-array
+  annotations:
+    description: |
+      A simple task that writes array
+spec:
+  results:
+    - name: array-results
+      type: array
+      description: The array results
+#...
+
+# op-release-notes-1-8.adoc
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-hub-db
+  labels:
+    app: tekton-hub-db
+type: Opaque
+stringData:
+  POSTGRES_HOST: <hostname>
+  POSTGRES_DB: <database_name>
+  POSTGRES_USER: <username>
+  POSTGRES_PASSWORD: <password>
+  POSTGRES_PORT: <listening_port_number>
+
+# op-release-notes-1-8.adoc
+#  ...
+  annotations:
+     pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" && target_branch == "main" && source_branch == "wip"
+
+# op-release-notes-1-8.adoc
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-observability
+  namespace: tekton-pipelines
+  labels:
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-pipelines
+data:
+  _example: |
+#  ...
+    metrics.taskrun.level: "task"
+    metrics.taskrun.duration-type: "histogram"
+    metrics.pipelinerun.level: "pipeline"
+    metrics.pipelinerun.duration-type: "histogram"
+
+# op-release-notes-1-8.adoc
+securityContext:
+  capabilities:
+    add: ["SETFCAP"]
+
+# op-release-notes-1-9.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline: 
+    enable-bundles-resolver: true
+    enable-cluster-resolver: true
+    enable-git-resolver: true
+    enable-hub-resolver: true
+#...
+
+# op-release-notes-1-9.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline: 
+    bundles-resolver-config:
+      default-service-account: pipelines
+    cluster-resolver-config:
+      default-namespace: test
+    git-resolver-config:
+      server-url: localhost.com
+    hub-resolver-config: 
+      default-tekton-hub-catalog: tekton
+#...
+
+# op-release-notes-1-9.adoc
+#  ...
+  annotations:
+     pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" && "docs/*.md".pathChanged()
+
+# op-release-notes-1-9.adoc
+yaml
+kind: PipelineRun
+spec:
+  timeouts:
+    pipeline: "0"  # No timeout
+    tasks: "0h3m0s"
+
+# op-release-notes-1-9.adoc
+#...
+  - name: IMAGE_NAME
+    value: 'image-registry.openshift-image-registry.svc:5000/<test_namespace>/<test_pipelinerun>'
+#...
+
+# op-release-notes-1-9.adoc
+#...
+  - name: IMAGE_NAME
+    value: 'image-registry.openshift-image-registry.svc:5000/{{ target_namespace }}/$(context.pipelineRun.name)'
+#...
+
+# op-changing-source-branch-in-repository-crd.adoc
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: my-repo
+  namespace: target-namespace
+spec:
+# ...
+  settings:
+    pipelinerun_provenance: "default_branch"
+# ...
+
+# op-disabling-the-integretion-of-tekton-hub.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  hub:
+    params:
+      - name: enable-devconsole-integration
+        value: false
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-pr-main
+annotations:
+  pipelinesascode.tekton.dev/on-target-branch: "[main]" #<1>
+  pipelinesascode.tekton.dev/on-event: "[pull_request]"
+# ...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-push-on-main
+annotations:
+  pipelinesascode.tekton.dev/on-target-branch: "[refs/heads/main]" #<1>
+  pipelinesascode.tekton.dev/on-event: "[push]"
+# ...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-comment
+annotations:
+  pipelinesascode.tekton.dev/on-comment: "^/merge-pr"
+# ...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-advanced-pr
+annotations:
+  pipelinesascode.tekton.dev/on-cel-expression: |
+    event == "pull_request" && target_branch == "main" && source_branch == "wip"
+#...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-advanced-pr-pathchanged
+annotations:
+  pipelinesascode.tekton.dev/on-cel-expression: |
+    event == "pull_request" && "docs/\*.md".pathChanged() # #<1>
+# ...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-advanced-pr-downstream
+annotations:
+  pipelinesascode.tekton.dev/on-cel-expression: |
+    event == "pull_request && event_title.startsWith("[DOWNSTREAM]")
+# ...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-advanced-pr-not-experimental
+annotations:
+  pipelinesascode.tekton.dev/on-cel-expression: |
+    event == "pull_request" && target_branch != experimental"
+# ...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      body.pull_request.base.ref == "main" &&
+        body.pull_request.user.login == "superuser" &&
+        body.action == "synchronize"
+# ...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+#...
+  pipelinesascode.tekton.dev/task: "github-add-comment"
+#...
+
+# op-creating-pipeline-run-using-pipelines-as-code.adoc
+[...]
+tasks:
+  - name:
+      taskRef:
+        name: github-add-comment
+      params:
+        - name: REQUEST_URL
+          value: "{{ repo_url }}/pull/{{ pull_request_number }}" #<1>
+        - name: COMMENT_OR_FILE
+          value: "Pipelines as Code IS GREAT!"
+        - name: GITHUB_TOKEN_SECRET_NAME
+          value: "{{ git_auth_secret }}"
+        - name: GITHUB_TOKEN_SECRET_KEY
+          value: "git-provider-token"
+#...
+
+# op-configuring-pipeline-resolvers.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    enable-bundles-resolver: true
+    enable-cluster-resolver: true
+    enable-git-resolver: true
+    enable-hub-resolver: true
+
+# op-configuring-pipeline-resolvers.adoc
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    bundles-resolver-config:
+      default-service-account: pipelines
+    cluster-resolver-config:
+      default-namespace: test
+    git-resolver-config:
+      server-url: localhost.com
+    hub-resolver-config:
+      default-tekton-hub-catalog: tekton
+
