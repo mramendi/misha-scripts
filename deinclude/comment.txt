@@ -1,0 +1,15 @@
+Version(s):
+
+this version only
+
+Issue:
+
+RHDEVDOCS 6426
+
+Link to docs preview: N/A
+
+QE review: N/A
+
+Additional information:
+
+This PR removes the "Making open source more inclusive" statement. It does not add any  text and does not modify any functional documentation.
