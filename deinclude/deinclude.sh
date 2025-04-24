@@ -8,5 +8,5 @@ echo "Enter to proceed with pull request, Ctrl-C to stop"
 read
 git commit -a -m "RHDEVDOCS 6426 Remove language note" | exit 1
 git push -u mramendi RHDEVDOCS-6426-$1 | exit 1
-gh pr create --base $1 --head mramendi:RHDEVDOCS-6426-$1 --title "RHDEVDOCS 6426 Remove language note - pipelines-docs-main" --body-file ../misha-scripts/deinclude/comment.txt
+gh pr create --base $1 --head mramendi:RHDEVDOCS-6426-$1 --title "RHDEVDOCS 6426 Remove language note - $1" --body-file ../misha-scripts/deinclude/comment.txt
 popd
