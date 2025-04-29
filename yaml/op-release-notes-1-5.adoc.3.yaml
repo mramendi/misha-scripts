@@ -1,0 +1,11 @@
+#...
+- name: deploy
+  params:
+  - name: SCRIPT
+    value: oc rollout status <deployment-name>
+  runAfter:
+    - build
+  taskRef:
+    kind: ClusterTask
+    name: openshift-client
+#...

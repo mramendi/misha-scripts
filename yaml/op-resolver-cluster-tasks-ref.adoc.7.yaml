@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-deploy-image
+spec:
+# ...
+  tasks:
+  - name: copy-image
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: skopeo-copy
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: SOURCE_IMAGE_URL
+      value: "docker://internal.registry/myimage:latest"
+    - name: DESTINATION_IMAGE_URL
+      value: "docker://production.registry/myimage:v1.0"
+    workspaces:
+    - name: output
+      workspace: shared-workspace

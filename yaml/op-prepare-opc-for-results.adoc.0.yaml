@@ -1,0 +1,8 @@
+address: <tekton_results_route> # #<1>
+token: <authentication_token> # #<2>
+ssl:
+   roots_file_path: /home/example/cert.pem # #<3>
+   server_name_override: tekton-results-api-service.openshift-pipelines.svc.cluster.local # #<4>
+ service_account:
+   namespace: service_acc_1 #<5>
+   name: service_acc_1 #<5>

@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: skopeo-copy
+spec:
+  workspaces:
+    - name: dockerconfig
+      description: Includes a docker `config.json`
+# ...

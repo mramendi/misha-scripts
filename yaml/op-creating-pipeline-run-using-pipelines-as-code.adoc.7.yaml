@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      body.pull_request.base.ref == "main" &&
+        body.pull_request.user.login == "superuser" &&
+        body.action == "synchronize"
+# ...

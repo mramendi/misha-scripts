@@ -1,0 +1,10 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    git-resolver-config:
+      default-revision: main # #<1>
+      fetch-timeout: 1m # #<2>
+      default-url: https://github.com/tektoncd/catalog.git # #<3>

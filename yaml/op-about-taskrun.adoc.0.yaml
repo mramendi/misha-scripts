@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1 #<1>
+kind: TaskRun #<2>
+metadata:
+  name: apply-manifests-taskrun #<3>
+spec: #<4>
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  taskRef: #<5>
+    kind: Task
+    name: apply-manifests
+  workspaces: #<6>
+  - name: source
+    persistentVolumeClaim:
+      claimName: source-pvc

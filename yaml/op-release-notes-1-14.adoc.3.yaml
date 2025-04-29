@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: git-api-demo-tr
+spec:
+  taskRef:
+    resolver: git
+    params:
+    - name: org
+      value: tektoncd
+    - name: repo
+      value: catalog
+    - name: revision
+      value: main
+    - name: pathInRepo
+      value: task/git-clone/0.6/git-clone.yaml
+    # create the my-secret-token secret in the namespace where the
+    # pipelinerun is created. The secret must  contain a GitHub personal access
+    # token in the token key of the secret.
+    - name: token
+      value: my-secret-token
+    - name: tokenKey
+      value: token
+    - name: scmType
+      value: github
+    - name: serverURL
+      value: https://ghe.mycompany.com

@@ -1,0 +1,16 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: simple-eventlistener
+spec:
+  serviceAccountName:  simple-tekton-robot
+  triggers:
+    - name: simple-trigger
+      bindings:
+      - ref: simple-binding
+      template:
+        ref: simple-template
+  resources:
+    kubernetesResource:
+      serviceType: NodePort
+      servicePort: 38080

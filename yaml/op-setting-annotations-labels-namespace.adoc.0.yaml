@@ -1,0 +1,8 @@
+apiVersion: operator.tekton.dev/v1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  targetNamespaceMetadata:
+    labels: {"example-label":"example-value"}
+    annotations: {"example-annotation":"example-value"}

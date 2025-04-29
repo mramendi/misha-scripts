@@ -1,0 +1,9 @@
+apiVersion: operator.tekton.dev/v1alpha1
+  kind: TektonConfig
+  metadata:
+    name: config
+  spec:
+    pipeline:
+      disable-working-directory-overwrite: false
+      disable-home-env-overwrite: false
+#  ...

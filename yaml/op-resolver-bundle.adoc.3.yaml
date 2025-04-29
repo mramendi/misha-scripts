@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: bundle-task-reference-demo
+spec:
+  taskRef:
+    resolver: bundles
+    params:
+    - name: bundle
+      value: registry.example.com:5000/simple/new_task:latest
+    - name: name
+      value: hello-world
+    - name: kind
+      value: task
+  params:
+  - name: sample-task-parameter
+    value: test

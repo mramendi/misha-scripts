@@ -1,0 +1,15 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    git-resolver-config:
+      default-revision: main # #<1>
+      fetch-timeout: 1m # #<2>
+      scm-type: github # #<3>
+      server-url: api.internal-github.com # #<4>
+      api-token-secret-name: github-auth-secret # #<5>
+      api-token-secret-key: github-auth-key # #<6>
+      api-token-secret-namespace: github-auth-namespace # #<7>
+      default-org: tektoncd # #<8>

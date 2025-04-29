@@ -1,0 +1,12 @@
+apiVersion: triggers.tekton.dev/v1beta1 #<1>
+kind: TriggerBinding #<2>
+metadata:
+  name: vote-app #<3>
+spec:
+  params: #<4>
+  - name: git-repo-url
+    value: $(body.repository.url)
+  - name: git-repo-name
+    value: $(body.repository.name)
+  - name: git-revision
+    value: $(body.head_commit.id)

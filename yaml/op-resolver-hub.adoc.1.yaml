@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: hub-pipeline-reference-demo
+spec:
+  pipelineRef:
+    resolver: hub
+    params:
+    - name: catalog
+      value: tekton-catalog-pipelines
+    - name: type
+      value: artifact
+    - name: kind
+      value: pipeline
+    - name: name
+      value: example-pipeline
+    - name: version
+      value: "0.1"
+  params:
+  - name: sample-pipeline-parameter
+    value: test

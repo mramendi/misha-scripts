@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: cluster-task-reference-demo
+spec:
+  taskRef:
+    resolver: hub
+    params:
+    - name: catalog
+      value: tekton-catalog-tasks
+    - name: type
+      value: artifact
+    - name: kind
+      value: task
+    - name: name
+      value: example-task
+    - name: version
+      value: "0.6"
+  params:
+  - name: sample-task-parameter
+    value: test

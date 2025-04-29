@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+ name: tkn-run
+spec:
+ pipelineSpec:
+   tasks:
+   - name: tkn-run
+     taskRef:
+       resolver: cluster
+       params:
+       - name: kind
+         value: task
+       - name: name
+         value: tkn
+       - name: namespace
+         value: openshift-pipelines
+     params:
+     - name: ARGS
