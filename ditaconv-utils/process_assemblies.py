@@ -24,15 +24,13 @@ for filename in files:
     try:
         os.rename(filename,backupname)
     except Exception as e:
-        print(f"Exception while renaming {filename} to {backupname}")
-        print(e)
+        print(f"Exception while renaming {filename} to {backupname}: {e}")
         continue
     try:
         with open(backupname) as f:
             lines=f.readlines()
     except Exception as e:
-        print(f"Exception while reading {backupname}")
-        print(e)
+        print(f"Exception while reading {backupname}: {e}")
         continue
 
     try:
@@ -47,8 +45,7 @@ for filename in files:
                     print(f"WARNING: {filename} has possible texts after includes, check if you need to split it")
                 f.write(line)
     except Exception as e:
-        print(f"Exception while writing {filename}, original content saved as {backupname}")
-        print(e)
+        print(f"Exception while writing {filename}, original content saved as {backupname}: {e}")
         continue
     try:
         os.remove(backupname)
