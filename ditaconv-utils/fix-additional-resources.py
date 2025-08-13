@@ -6,6 +6,9 @@
 # (no code was AI generated)
 
 import sys
+import os.path
+
+(basepath,drop)=os.path.split(sys.argv[1])
 
 with open(sys.argv[1]) as f:
     lines = f.readlines()
@@ -79,7 +82,7 @@ while True:
     module_filename=include_line[filename_start:filename_end]
 
     try:
-        with open(module_filename,"a") as append_file:
+        with open(os.path.join(basepath,module_filename),"a") as append_file:
             append_file.write("\n")
             append_file.writelines(additional_resources)
     except Exception as e:
