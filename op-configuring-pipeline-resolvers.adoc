@@ -1,0 +1,57 @@
+// This module is included in the following assemblies:
+// * install_config/customizing-configurations-in-the-tektonconfig-cr.adoc
+
+:_mod-docs-content-type: CONCEPT
+[id="op-configuring-pipeline-resolvers_{context}"]
+= Configuring pipeline resolvers
+
+You can configure pipeline resolvers in the `TektonConfig` custom resource (CR). You can enable or disable the following pipeline resolvers:
+
+* `enable-bundles-resolver`
+* `enable-cluster-resolver`
+* `enable-git-resolver`
+* `enable-hub-resolver`
+
+.Example
+[example]
+====
+The following example shows how to enable all pipeline resolvers:
+[source,yaml]
+----
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    enable-bundles-resolver: true
+    enable-cluster-resolver: true
+    enable-git-resolver: true
+    enable-hub-resolver: true
+----
+====
+
+You can also provide resolver specific configurations in the `TektonConfig` CR.
+
+.Example
+[example]
+====
+The following example shows how to define resolver-specific fields in the `map[string]string` format to set configurations for each pipeline resolver:
+[source,yaml]
+----
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  pipeline:
+    bundles-resolver-config:
+      default-service-account: pipelines
+    cluster-resolver-config:
+      default-namespace: test
+    git-resolver-config:
+      server-url: localhost.com
+    hub-resolver-config:
+      default-tekton-hub-catalog: tekton
+----
+====
