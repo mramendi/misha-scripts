@@ -1,0 +1,48 @@
+:_mod-docs-content-type: REFERENCE
+
+[id="ref-callback-scripts-and-inventory_{context}"]
+= Example Callback Scripts and Dynamic Inventory Considerations
+
+You can access the callback by using REST, but the suggested method is to use one of the example scripts that includes {ControllerName}:
+
+* `/usr/share/awx/request_tower_configuration.sh` (Linux/UNIX)
+* `/usr/share/awx/request_tower_configuration.ps1` (Windows)
+
+Their usage is described in the source code of the file by passing the `-h` flag, as shown in the following example:
+
+[literal, options="nowrap" subs="+attributes"]
+----
+./request_tower_configuration.sh -h
+Usage: ./request_tower_configuration.sh <options>
+
+
+Request server configuration from Ansible Tower.
+
+
+OPTIONS:
+ -h      Show this message
+ -s      Controller server (e.g. https://ac.example.com) (required)
+ -k      Allow insecure SSL connections and transfers
+ -c      Host config key (required)
+ -t      Job template ID (required)
+ -e      Extra variables
+----
+
+This script can retry commands and is therefore a more robust way to use callbacks than a simple `curl` request.
+The script retries once per minute for up to ten minutes.
+
+[NOTE]
+====
+This is an example script.
+Edit this script if you need more dynamic behavior when detecting failure scenarios, as any non-200 error code may not be a transient error requiring retry.
+====
+
+You can use callbacks with dynamic inventory in {ControllerName}.
+For example, when pulling cloud inventory from one of the supported cloud providers.
+In these cases, along with setting *Update On Launch*, ensure that you configure an inventory cache timeout for the inventory source, to avoid hammering of your cloud's API endpoints.
+Since the `request_tower_configuration.sh` script polls once per minute for up to ten minutes, a suggested cache invalidation time for inventory (configured on the inventory source itself) would be one or two minutes.
+
+Running the `request_tower_configuration.sh` script from a cron job is not recommended; however, a suggested cron interval is every 30 minutes.
+Repeated configuration can be handled by scheduling {ControllerName} so that the primary use of callbacks by most users is to enable a base image that is bootstrapped into the latest configuration when coming online.
+Running at first boot is best practice.
+First boot scripts are init scripts that typically self-delete, so you set up an init script that calls a copy of the `request_tower_configuration.sh` script and make that into an auto scaling image.

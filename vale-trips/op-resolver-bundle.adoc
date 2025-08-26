@@ -1,0 +1,148 @@
+// This module is included in the following assemblies:
+// * create/remote-pipelines-tasks-resolvers.adoc
+
+// // *openshift_pipelines/remote-pipelines-tasks-resolvers.adoc
+:_mod-docs-content-type: PROCEDURE
+[id="resolver-bundles-specify_{context}"]
+= Specifying a remote pipeline, task, or step action using the bundles resolver
+
+When creating a pipeline run, you can specify a remote pipeline from a Tekton bundle. When creating a pipeline or a task run, you can specify a remote task from a Tekton bundle. When creating a step within a task, you can reference a remote `StepAction` definition from a Tekton bundle.
+
+.Procedure
+
+* To specify a remote pipeline, task, or `StepAction` definition from a Tekton bundle, use the following reference format in the `pipelineRef`, `taskRef`, or `step.ref` spec:
++
+[source,yaml]
+----
+# ...
+  resolver: bundles
+  params:
+  - name: bundle
+    value: <fully_qualified_image_name>
+  - name: name
+    value: <resource_name>
+  - name: kind
+    value: [pipeline|task]
+# ...
+----
++
+.Supported parameters for the bundles resolver
+|===
+| Parameter | Description | Example value
+| `serviceAccount`
+| The name of the service account to use when constructing registry credentials.
+| `default`
+| `bundle`
+| The bundle URL pointing at the image to fetch.
+| `gcr.io/tekton-releases/catalog/upstream/golang-build:0.1`
+| `name`
+| The name of the resource to pull out of the bundle.
+| `golang-build`
+| `kind`
+| The kind of the resource to pull out of the bundle.
+| `task`
+|===
++
+If the pipeline or task requires additional parameters, specify values for these parameters in the `params` section of the specification of the pipeline, pipeline run, or task run. The `params` section of the `pipelineRef` or `taskRef` specification must contain only the parameters that the resolver supports.
+
+.Example
+[example]
+====
+The following example pipeline run references a remote pipeline from a Tekton bundle:
+
+[source,yaml]
+----
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: bundle-pipeline-reference-demo
+spec:
+  pipelineRef:
+    resolver: bundles
+    params:
+    - name: bundle
+      value: registry.example.com:5000/simple/pipeline:latest
+    - name: name
+      value: hello-pipeline
+    - name: kind
+      value: pipeline
+  params:
+  - name: sample-pipeline-parameter
+    value: test
+  - name: username
+    value: "pipelines"
+----
+
+The following example pipeline references a remote task from a Tekton bundle:
+
+[source,yaml]
+----
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-with-bundle-task-reference-demo
+spec:
+  tasks:
+  - name: "bundle-task-demo"
+    taskRef:
+      resolver: bundles
+      params:
+      - name: bundle
+        value: registry.example.com:5000/advanced/task:latest
+      - name: name
+        value: hello-world
+      - name: kind
+        value: task
+    params:
+    - name: sample-task-parameter
+      value: test
+----
+
+The following example task run references a remote task from a Tekton bundle:
+
+[source,yaml]
+----
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: bundle-task-reference-demo
+spec:
+  taskRef:
+    resolver: bundles
+    params:
+    - name: bundle
+      value: registry.example.com:5000/simple/new_task:latest
+    - name: name
+      value: hello-world
+    - name: kind
+      value: task
+  params:
+  - name: sample-task-parameter
+    value: test
+----
+
+The following example task includes a step that references a `StepAction` definition from a Tekton bundle:
+
+[source,yaml]
+----
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: bundle-stepaction-reference-demo
+spec:
+  steps:
+  - name: example-step
+    ref:
+      resolver: bundles
+      params:
+      - name: bundle
+        value: registry.example.com:5000/simple/new_task:latest
+      - name: name
+        value: hello-world-action
+      - name: kind
+        value: StepAction
+    params:
+    - name: sample-stepaction-parameter
+      value: test
+----
+====
