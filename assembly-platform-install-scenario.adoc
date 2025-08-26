@@ -1,0 +1,100 @@
+:_mod-docs-content-type: ASSEMBLY
+
+
+ifdef::context[:parent-context: {context}]
+
+
+
+[id="assembly-platform-install-scenario"]
+= Installing {PlatformName}
+
+
+:context: platform-install-scenario
+
+[role="_abstract"]
+{PlatformNameShort} is a modular platform. The {Gateway} deploys automation platform components, such as {ControllerName}, {HubName}, and {EDAcontroller}. 
+
+For more information about the components provided with {PlatformNameShort}, see link:http://test/ref-aap-components[{PlatformName} components] in {TitlePlanningGuide}. 
+
+There are several supported installation scenarios for {PlatformName}. To install {PlatformName}, you must edit the inventory file parameters to specify your installation scenario. You can use the link:http://test/rpm-topologies#example_enterprise_inventory_file[enterprise installer] as a basis for your own inventory file.
+
+// New install scenarios including platform gateway AAP-17771
+//* xref:ref-gateway-controller-ext-db[Single platform gateway and {ControllerName} with an external (installer managed) database]
+//* xref:ref-gateway-controller-hub-ext-db[Single platform gateway, {ControllerName}, and {HubName} with an external (installer managed) database]
+//* xref:ref-gateway-controller-hub-eda-ext-db[Single platform gateway, {ControllerName}, {HubName}, and {EDAcontroller} node with an external (installer managed) database]
+
+.Additional resources
+* link:http://test/appendix-inventory-files-vars[Inventory file variables]
+
+// Removed for install scenario consolidation AAP-17771
+// * xref:ref-single-controller-ext-installer-managed-db[Single {ControllerName} with external (installer managed) database]
+// * xref:ref-single-controller-hub-ext-database-inventory[Single {ControllerName} and single {HubName} with external (installer managed) database]
+// * xref:ref-single-controller-hub-eda-with-managed-db[Single {ControllerName}, single {HubName}, and single event-driven ansible controller node with external (installer managed ) database]
+
+//[ifowler] Removed for AAP-18700 Install Guide Scenario Consolidation  
+//* xref:ref-standlone-platform-inventory_platform-install-scenario[Standalone automation controller with external (installer managed) database] 
+//* xref:ref-single-controller-ext-customer-managed-db_platform-install-scenario[Single {ControllerName} with external (customer provided) database]
+//* xref:ref-standlone-platform-ext-database-inventory_platform-install-scenario[{PlatformNameShort} with an external (installer managed) database]
+//* xref:ref-example-platform-ext-database-customer-provided_platform-install-scenario[{PlatformNameShort} with an external (customer provided) database]
+//* xref:ref-single-eda-controller-with-internal-db_platform-install-scenario[Single {EDAcontroller} node with internal database]
+//* xref:ref-standlone-hub-inventory_platform-install-scenario[Standalone {HubName} with internal database]
+//* xref:ref-standalone-hub-ext-database-customer-provided_platform-install-scenario[Single {HubName} with external (customer provided) database]
+// xref:ref-ldap-config-on-pah_platform-install-scenario[LDAP configuration on {PrivateHubName}]
+
+include::platform/proc-editing-inventory-file.adoc[leveloffset=+1]
+include::platform/con-install-scenario-examples.adoc[leveloffset=+1]
+include::platform/con-install-scenario-recommendations.adoc[leveloffset=+2]
+//Added for AAP-29120
+include::platform/ref-gateway-controller-ext-db.adoc[leveloffset=+3]
+include::platform/ref-gateway-controller-hub-ext-db.adoc[leveloffset=+3]
+include::platform/ref-gateway-controller-hub-eda-ext-db.adoc[leveloffset=+3]
+include::platform/con-ha-hub-installation.adoc[leveloffset=+3]
+include::platform/proc-install-ha-hub-selinux.adoc[leveloffset=+3]
+include::platform/proc-configure-pulpcore-service.adoc[leveloffset=+4]
+include::platform/proc-apply-selinux-context.adoc[leveloffset=+4]
+include::hub/hub/proc-configure-content-signing-on-pah.adoc[leveloffset=+3]
+include::platform/proc-add-eda-safe-plugin-var.adoc[leveloffset=+3]
+
+include::platform/proc-set-registry-username-password.adoc[leveloffset=+2]
+//[emcwhinn] Removing for AAP-29246 as content is being moved to one guide in 2.4 customer portal 
+//include::platform/con-eda-2-5-with-controller-2-4.adoc[leveloffset=+3]
+//[ifowler] Removed for AAP-18700 Install Guide Scenario Consolidation  
+//include::platform/ref-platform-non-inst-database-inventory.adoc[leveloffset=+3]
+//include::platform/ref-single-controller-ext-customer-managed-db.adoc[leveloffset=+3]
+//include::platform/ref-example-platform-ext-database-inventory.adoc[leveloffset=+3]
+//include::platform/ref-example-platform-ext-database-customer-provided.adoc[leveloffset=+3]
+//include::platform/ref-single-eda-controller-with-internal-db.adoc[leveloffset=+3]
+//include::platform/ref-standalone-hub-inventory.adoc[leveloffset=+3]
+// include::platform/ref-standalone-controller-hub-ext-database-inventory.adoc[leveloffset=+3]
+//[rjgrange] Removed for AAP-22613 Removing all references to SSO and LDAP installation
+//include::platform/ref-connect-hub-to-rhsso.adoc[leveloffset=+4]
+
+
+//[rjgrange] Removed for AAP-22613 Removing all references to SSO and LDAP installation
+//include::platform/ref-ldap-config-on-pah.adoc[leveloffset=+3]
+//include::platform/ref-ldap-referrals.adoc[leveloffset=+3]
+// include::platform/ref-single-controller-hub-eda-with-managed-db.adoc[leveloffset=+3]
+//[ifowler] Removed for AAP-18700 Install Guide Scenario Consolidation  
+//include::platform/ref-standalone-hub-ext-database-customer-provided.adoc[leveloffset=+3]
+// dcdacosta - removed this assembly because the modules are included above. include::assembly-installing-high-availability-hub.adoc[leveloffset=+3]
+// sayjadha - Added platform/con-backup-aap.adoc as part of AAP-39133: RPM installation - Document use of compression when performing a backup. The backup procedure was missing in RPM install guide, and added info. about new compression variables. include::platform/con-backup-aap.adoc[leveloffset=+1]
+
+include::platform/ref-redis-config-enterprise-topology.adoc[leveloffset=+3]
+include::platform/proc-running-setup-script.adoc[leveloffset=+1]
+include::platform/proc-verify-aap-installation.adoc[leveloffset=+1]
+include::platform/con-backup-aap.adoc[leveloffset=+1]
+include::platform/con-adding-subscription-manifest.adoc[leveloffset=+1]
+
+// Removing to consolidate AAP installation verification - you verify by logging into the gateway rather than logging into each component's UI - AAP-17771  
+// include::platform/proc-verify-controller-installation.adoc[leveloffset=+1]
+// include::platform/ref-controller-configs.adoc[leveloffset=+2]
+// include::platform/proc-verify-hub-installation.adoc[leveloffset=+1]
+// include::platform/ref-hub-configs.adoc[leveloffset=+2]
+// include::platform/proc-verify-eda-controller-installation.adoc[leveloffset=+1]
+
+//[ifowler] Removed for AAP-18700 Install Guide Scenario Consolidation moved to Operations Guide
+//include::assembly-platform-whats-next.adoc[leveloffset=+1]
+
+
+ifdef::parent-context[:context: {parent-context}]
+ifndef::parent-context[:!context:]
