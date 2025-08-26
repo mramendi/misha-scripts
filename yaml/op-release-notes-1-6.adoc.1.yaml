@@ -1,0 +1,11 @@
+#...
+spec:
+  host: el-event-listener-q8c3w5-test-upgrade1.apps.ve49aws.aws.ospqa.com
+  port:
+    targetPort: 8000
+  to:
+    kind: Service
+    name: el-event-listener-q8c3w5
+    weight: 100
+  wildcardPolicy: None
+#...

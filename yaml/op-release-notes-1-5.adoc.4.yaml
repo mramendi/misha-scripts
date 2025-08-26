@@ -1,0 +1,9 @@
+#...
+steps:
+  - name: git
+    env:
+    - name: HOME
+      value: /root
+    image: $(params.BASE_IMAGE)
+    workingDir: $(workspaces.source.path)
+#...

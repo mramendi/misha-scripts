@@ -1,0 +1,6 @@
+#...
+hub:
+  params:
+    - name: enable-devconsole-integration
+      value: "true"
+#...

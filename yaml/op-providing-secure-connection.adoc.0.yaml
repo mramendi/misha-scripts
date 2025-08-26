@@ -1,0 +1,18 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: route-passthrough-secured  #<1>
+spec:
+  host: <hostname>
+  to:
+    kind: Service
+    name: frontend #<1>
+  tls:
+    termination: reencrypt #<2>
+    key: [as in edge termination]
+    certificate: [as in edge termination]
+    caCertificate: [as in edge termination]
+    destinationCACertificate: |- #<3>
+      -----BEGIN CERTIFICATE-----
+      [...]
+      -----END CERTIFICATE-----

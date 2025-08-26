@@ -1,0 +1,8 @@
+kind: Namespace
+apiVersion: v1
+# ...
+spec:
+  annotations:
+    operator.tekton.dev/prune.resources: "taskrun, pipelinerun"
+    operator.tekton.dev/prune.keep-since: 7200
+# ...

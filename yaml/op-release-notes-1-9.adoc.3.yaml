@@ -1,0 +1,6 @@
+yaml
+kind: PipelineRun
+spec:
+  timeouts:
+    pipeline: "0"  # No timeout
+    tasks: "0h3m0s"

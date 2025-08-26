@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: petclinic-run-
+spec:
+  pipelineRef:
+    name: maven-build
+  params:
+  - name: GIT_URL
+    value: https://github.com/spring-projects/spring-petclinic
+  taskRunTemplate:
+    podTemplate:
+      priorityClassName: pipeline1-pc
+  workspaces:
+  - name: local-maven-repo
+    emptyDir: {}
+  - name: source
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200M

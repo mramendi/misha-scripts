@@ -1,0 +1,9 @@
+# The format to extract vulnerability summary (adjust the jq command for different JSON structures).
+jq -rce \ 
+    '{vulnerabilities:{
+      critical: (.result.summary.CRITICAL),
+      high: (.result.summary.IMPORTANT),
+      medium: (.result.summary.MODERATE),
+      low: (.result.summary.LOW)
+      }}' scan_output.json | tee $(results.SCAN_OUTPUT.path)
+

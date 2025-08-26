@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: build-deploy-api-pipelinerun
+spec:
+  pipelineRef:
+    name: build-and-deploy
+  params:
+#...
+
+  workspaces: #<1>
+  - name: shared-workspace #<2>
+    volumeClaimTemplate: #<3>
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 500Mi

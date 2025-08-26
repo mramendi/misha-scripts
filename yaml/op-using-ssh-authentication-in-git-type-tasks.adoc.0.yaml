@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: example-git-task
+spec:
+  steps:
+    - name: example-git-step
+#     ...
+      script:
+        ln -s $HOME/.ssh /root/.ssh
+#     ...

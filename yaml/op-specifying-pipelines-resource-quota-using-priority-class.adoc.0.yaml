@@ -1,0 +1,6 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: pipeline1-pc
+value: 1000000
+description: "Priority class for pipeline1"

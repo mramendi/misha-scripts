@@ -1,0 +1,10 @@
+#...
+spec:
+  tasks:
+    - name: sbom-task  
+      taskRef: 
+        name: sbom-task # #<1>
+  results:
+    - name: IMAGE_URL  # #<2>
+      description: url
+      value: <oci_image_registry_url> # #<3>

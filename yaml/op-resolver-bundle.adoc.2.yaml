@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-with-bundle-task-reference-demo
+spec:
+  tasks:
+  - name: "bundle-task-demo"
+    taskRef:
+      resolver: bundles
+      params:
+      - name: bundle
+        value: registry.example.com:5000/advanced/task:latest
+      - name: name
+        value: hello-world
+      - name: kind
+        value: task
+    params:
+    - name: sample-task-parameter
+      value: test

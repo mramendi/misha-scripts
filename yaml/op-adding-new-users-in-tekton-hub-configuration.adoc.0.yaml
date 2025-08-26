@@ -1,0 +1,14 @@
+#...
+scopes:
+  - name: agent:create
+    users: [<username_1>, <username_2>] #<1>
+  - name: catalog:refresh
+    users: [<username_3>, <username_4>]
+  - name: config:refresh
+    users: [<username_5>, <username_6>]
+
+default:
+  scopes:
+    - rating:read
+    - rating:write
+#...

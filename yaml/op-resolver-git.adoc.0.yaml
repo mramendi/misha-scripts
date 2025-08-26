@@ -1,0 +1,10 @@
+# ...
+  resolver: git
+  params:
+  - name: url
+    value: <git_repository_url>
+  - name: revision
+    value: <branch_name>
+  - name: pathInRepo
+    value: <path_in_repository>
+# ...

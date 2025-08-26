@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+# ...
+spec:
+  params:
+    - name: source_url
+      value: "{{ source_url }}"
+  pipelineSpec:
+    params:
+      - name: source_url
+# ...

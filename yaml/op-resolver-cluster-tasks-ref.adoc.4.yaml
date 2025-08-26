@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+ name: kn-apply-run
+spec:
+ pipelineSpec:
+   tasks:
+   - name: kn-apply-run
+     taskRef:
+       resolver: cluster
+       params:
+       - name: kind
+         value: task
+       - name: name
+         value: kn-apply
+       - name: namespace
+         value: openshift-pipelines
+     params:
+     - name: SERVICE
+       value: "hello"
+     - name: IMAGE
+       value: "gcr.io/knative-samples/helloworld-go:latest"

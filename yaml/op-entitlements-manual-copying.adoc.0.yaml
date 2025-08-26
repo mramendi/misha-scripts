@@ -1,0 +1,47 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: buildah-pr-test
+spec:
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: dockerconfig
+      secret:
+        secretName: regred
+    - name: rhel-entitlement  # #<1>
+      secret:
+        secretName: etc-pki-entitlement
+  pipelineSpec:
+    workspaces:
+      - name: shared-workspace
+      - name: dockerconfig
+      - name: rhel-entitlement  # #<2>
+    tasks:
+# ...
+      - name: buildah
+        taskRef:
+          resolver: cluster
+          params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+        workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: dockerconfig
+        - name: rhel-entitlement  # #<3>
+          workspace: rhel-entitlement
+        params:
+        - name: IMAGE
+          value: <image_where_you_want_to_push>

@@ -1,0 +1,10 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: http-demo
+spec:
+  pipelineRef:
+    resolver: http
+    params:
+    - name: url
+      value: https://raw.githubusercontent.com/tektoncd/catalog/main/pipeline/build-push-gke-deploy/0.1/build-push-gke-deploy.yaml

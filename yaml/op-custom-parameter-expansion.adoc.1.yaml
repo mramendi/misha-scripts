@@ -1,0 +1,8 @@
+#...
+spec:
+  params:
+    - name: company
+      secretRef:
+        name: my-secret
+        key: companyname
+#...

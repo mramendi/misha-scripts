@@ -1,0 +1,85 @@
+apiVersion: tekton.dev/v1 #<1>
+kind: Pipeline #<2>
+metadata:
+  name: build-and-deploy #<3>
+spec: #<4>
+  workspaces: #<5>
+  - name: shared-workspace
+  params: #<6>
+  - name: deployment-name
+    type: string
+    description: name of the deployment to be patched
+  - name: git-url
+    type: string
+    description: url of the git repo for the code of deployment
+  - name: git-revision
+    type: string
+    description: revision to be used from repo of the code for deployment
+    default: "{pipelines-ver}"
+  - name: IMAGE
+    type: string
+    description: image to be built from the code
+  tasks: #<7>
+  - name: fetch-repository
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    params:
+    - name: URL
+      value: $(params.git-url)
+    - name: SUBDIRECTORY
+      value: ""
+    - name: DELETE_EXISTING
+      value: "true"
+    - name: REVISION
+      value: $(params.git-revision)
+  - name: build-image #<8>
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: buildah
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    params:
+    - name: TLSVERIFY
+      value: "false"
+    - name: IMAGE
+      value: $(params.IMAGE)
+    runAfter:
+    - fetch-repository
+  - name: apply-manifests #<9>
+    taskRef:
+      name: apply-manifests
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    runAfter: #<10>
+    - build-image
+  - name: update-deployment
+    taskRef:
+      name: update-deployment
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    params:
+    - name: deployment
+      value: $(params.deployment-name)
+    - name: IMAGE
+      value: $(params.IMAGE)
+    runAfter:
+    - apply-manifests

@@ -1,0 +1,14 @@
+# ...
+  resolver: hub
+  params:
+  - name: catalog
+    value: <catalog>
+  - name: type
+    value: <catalog_type>
+  - name: kind
+    value: [pipeline|task]
+  - name: name
+    value: <resource_name>
+  - name: version
+    value: <resource_version>
+# ...

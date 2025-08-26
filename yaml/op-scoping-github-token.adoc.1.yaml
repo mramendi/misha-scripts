@@ -1,0 +1,11 @@
+apiVersion: "pipelinesascode.tekton.dev/v1alpha1"
+kind: Repository
+metadata:
+  name: test
+  namespace: test-repo
+spec:
+  url: "https://github.com/linda/project"
+  settings:
+    github_app_token_scope_repos:
+    - "owner/project"
+    - "owner1/project1"

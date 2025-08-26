@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-and-deploy
+spec:
+# ...
+  tasks:
+# ...
+  - name: build-image
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: buildah
+      - name: namespace
+        value: openshift-pipelines
+    params:
+    - name: IMAGE
+      value: $(params.IMAGE)
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+# ...

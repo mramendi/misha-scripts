@@ -1,0 +1,11 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+# ...
+    chain:
+      artifacts.oci.storage: ""
+      artifacts.taskrun.format: tekton
+      artifacts.taskrun.storage: tekton
+# ...

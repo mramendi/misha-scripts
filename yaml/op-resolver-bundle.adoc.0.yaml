@@ -1,0 +1,10 @@
+# ...
+  resolver: bundles
+  params:
+  - name: bundle
+    value: <fully_qualified_image_name>
+  - name: name
+    value: <resource_name>
+  - name: kind
+    value: [pipeline|task]
+# ...

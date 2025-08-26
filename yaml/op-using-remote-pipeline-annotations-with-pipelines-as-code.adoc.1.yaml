@@ -1,0 +1,6 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    pipelinesascode.tekton.dev/pipeline: "https://git.provider/raw/pipeline.yaml"
+    pipelinesascode.tekton.dev/task: "./my-git-clone-task.yaml"

@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1 #<1>
+kind: PipelineRun #<2>
+metadata:
+  name: build-deploy-api-pipelinerun #<3>
+spec:
+  pipelineRef:
+    name: build-and-deploy #<4>
+  params: #<5>
+  - name: deployment-name
+    value: vote-api
+  - name: git-url
+    value: https://github.com/openshift-pipelines/vote-api.git
+  - name: IMAGE
+    value: image-registry.openshift-image-registry.svc:5000/pipelines-tutorial/vote-api
+  workspaces: #<6>
+  - name: shared-workspace
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 500Mi

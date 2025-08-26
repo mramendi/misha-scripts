@@ -1,0 +1,1 @@
+$ oc get route pipelines-vote-ui --template='http://{{.spec.host}}'

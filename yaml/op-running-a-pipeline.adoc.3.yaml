@@ -1,0 +1,1 @@
+$ tkn pipelinerun logs <pipelinerun_id> -f

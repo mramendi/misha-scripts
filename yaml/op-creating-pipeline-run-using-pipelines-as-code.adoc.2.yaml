@@ -1,0 +1,7 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-comment
+annotations:
+  pipelinesascode.tekton.dev/on-comment: "^/merge-pr"
+# ...

@@ -1,0 +1,12 @@
+#...
+spec:
+  steps:
+    - name: step-with-limts
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 800m
+#...

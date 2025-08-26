@@ -1,0 +1,15 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+# ...
+spec:
+  pruner:
+    resources:
+      - taskrun
+      - pipelinerun
+    keep: 100
+    prune-per-resource: false
+    schedule: "* 8 * * *"
+    startingDeadlineSeconds: 60
+# ...

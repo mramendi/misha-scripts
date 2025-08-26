@@ -1,0 +1,2 @@
+fsGroup:
+  type: MustRunAs

@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-buildah-as-user-1000
+spec:
+  params:
+  - name: IMAGE
+  - name: URL
+  workspaces:
+  - name: shared-workspace
+  - name: sslcertdir
+    optional: true
+  tasks:
+  - name: fetch-repository # #<1>
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    params:
+    - name: URL
+      value: $(params.URL)
+    - name: SUBDIRECTORY
+      value: ""
+    - name: DELETE_EXISTING
+      value: "true"
+  - name: buildah
+    taskRef:
+      name: buildah-as-user # #<2>
+    runAfter:
+    - fetch-repository
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    - name: sslcertdir
+      workspace: sslcertdir
+    params:
+    - name: IMAGE
+      value: $(params.IMAGE)
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipelinerun-buildah-as-user-1000
+spec:
+  taskRunSpecs:
+    - pipelineTaskName: buildah
+      taskServiceAccountName: pipelines-sa-userid-1000 # #<3>
+  params:
+  - name: URL
+    value: https://github.com/openshift/pipelines-vote-api
+  - name: IMAGE
+    value: image-registry.openshift-image-registry.svc:5000/test/buildahuser
+  pipelineRef:
+    name: pipeline-buildah-as-user-1000
+  workspaces:
+  - name: shared-workspace # #<4>
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi

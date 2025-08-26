@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+# ...
+  namespace: openshift # #<1>
+  labels:
+    pipeline.openshift.io/runtime: <runtime> # #<2>
+    pipeline.openshift.io/type: <pipeline-type> # #<3>
+# ...

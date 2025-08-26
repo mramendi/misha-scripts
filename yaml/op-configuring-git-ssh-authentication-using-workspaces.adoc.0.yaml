@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  workspaces:
+    - name: ssh-directory
+      description: |
+        A .ssh directory with private key, known_hosts, config, etc.

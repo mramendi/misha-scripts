@@ -1,0 +1,8 @@
+#...
+pruner:
+  resources:
+    - pipelinerun
+    - taskrun
+  schedule: "*/5 * * * *" # cron schedule
+  keep: 2 # delete all keeping n
+#...
